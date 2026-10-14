@@ -1,8 +1,8 @@
 {
-  "name": "hpl-study-LB-template",
+  "name": "adolescent-study",
   "version": "1.0.0",
   "private": true,
-  "description": "Harvard HPL AI study — Vercel-hosted static + serverless OpenAI proxy.",
+  "description": "Harvard Adolescent AI study — Vercel-hosted static + serverless OpenAI proxy.",
   "engines": { "node": "24.x" },
   "type": "module",
   "dependencies": {
