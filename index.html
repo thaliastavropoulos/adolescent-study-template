@@ -1619,7 +1619,7 @@
       <div class="consent-doc">
         <div class="consent-titlebox">
           <p><strong>Study Title:</strong> Online studies of causal cognition</p>
-          <p><strong>Researcher:</strong> [REPLACE ME! Researcher Name]</p>
+          <p><strong>Researcher:</strong> Thalia Stavropoulos</p>
         </div>
 
         <h2>Key Information</h2>
@@ -1679,7 +1679,7 @@
         <p>If you agree to take part in this research study, you may receive compensation for your time and effort. Students who take part in this study through the Harvard undergraduate participant pool will receive standard compensation through that program. Amazon Mechanical Turk and Prolific participants will be compensated through their respective platforms. Other adult participants may receive compensation for this study in the form of a gift card.</p>
 
         <h3>Who can I talk to?</h3>
-        <p>If you have questions, concerns, or complaints, you can contact the study researcher, [REPLACE ME! Researcher Name], at <strong>[REPLACE ME! Researcher Email]</strong>.</p>
+        <p>If you have questions, concerns, or complaints, you can contact the study researcher, Thalia Stavropoulos, at <strong>tstavropoulos@college.harvard.edu</strong>.</p>
         <p>This research has been reviewed and approved by the Harvard University Area Institutional Review Board ("IRB"). You may talk to them at <strong>(617) 496-2847</strong> or <strong>cuhs@harvard.edu</strong> if:</p>
         <ul>
           <li>Your questions, concerns, or complaints are not being answered by the research team.</li>
@@ -2151,7 +2151,7 @@
 
     <div class="card" style="margin-top:24px;">
       <p style="margin:0 0 12px;"><b>Because this study is still ongoing and other students may not yet have participated, we ask that you please do not discuss the details of the study design or what you learned in this debrief with other students in the course.</b> If someone asks about the study, you are welcome to say that it involves reading a lesson and answering questions about it.</p>
-      <p style="margin:0;">If you have any concerns about this study, you can contact [REPLACE ME! Researcher Name] at <a href="mailto:[REPLACE ME! Researcher Email]" style="color:var(--accent);">[REPLACE ME! Researcher Email]</a>.</p>
+      <p style="margin:0;">If you have any concerns about this study, you can contact Thalia Stavropoulos at <a href="mailto:tstavropoulos@college.harvard.edu" style="color:var(--accent);">tstavropoulos@college.harvard.edu</a>.</p>
     </div>
 
     <div class="option-list" style="margin:24px 0 8px;">
@@ -2173,7 +2173,7 @@
       <div class="seal">✓</div>
       <h1 style="margin-bottom:12px;">You've already completed this study</h1>
       <p style="max-width:520px; margin:0 auto 16px;">Thank you for participating! Our records show that you have already submitted your responses for this study, so there's nothing more for you to do here.</p>
-      <p style="font-size:14px; color:var(--ink-soft); margin-top:20px;">If you believe this is a mistake, please reach out to the researcher, [REPLACE ME! Researcher Name], at <a href="mailto:[REPLACE ME! Researcher Email]" style="color:var(--accent);">[REPLACE ME! Researcher Email]</a>.</p>
+      <p style="font-size:14px; color:var(--ink-soft); margin-top:20px;">If you believe this is a mistake, please reach out to the researcher, Thalia Stavropoulos, at <a href="mailto:tstavropoulos@college.harvard.edu" style="color:var(--accent);">tstavropoulos@college.harvard.edu</a>.</p>
     </div>
   </section>
 
@@ -2185,7 +2185,7 @@
       <p style="max-width:480px; margin:0 auto 16px;">Thank you for participating in this study.</p>
       <p id="save-status" style="font-size:13px; color:var(--ink-muted); max-width:480px; margin:0 auto 16px;">Saving your responses…</p>
       <p style="font-size:13px; color:var(--ink-muted);">You will be entered into a drawing for either a Gutman Café or Amazon gift card voucher, and notified via email if you are selected.</p>
-      <p style="font-size:14px; color:var(--ink-soft); margin-top:20px;">If you have any questions about the study, please reach out to the researcher, [REPLACE ME! Researcher Name], at <a href="mailto:[REPLACE ME! Researcher Email]" style="color:var(--accent);">[REPLACE ME! Researcher Email]</a>.</p>
+      <p style="font-size:14px; color:var(--ink-soft); margin-top:20px;">If you have any questions about the study, please reach out to the researcher, Thalia Stavropoulos, at <a href="mailto:tstavropoulos@college.harvard.edu" style="color:var(--accent);">tstavropoulos@college.harvard.edu</a>.</p>
     </div>
   </section>
 
@@ -2239,7 +2239,7 @@
 // hashed-email path directly for speed. The database URL is public
 // Firebase config, not a secret.
 // Replace the entire "REPLACE ME!" string, including the brackets, with your Firebase URL:
-const FIREBASE_DATABASE_URL = '[REPLACE ME! Firebase URL]'; // <-- make sure there is no "/" at the end of this URL -- should look something like "https://study-template-default-rtdb.firebaseio.com"
+const FIREBASE_DATABASE_URL = 'https://adolescent-study-default-rtdb.firebaseio.com'; // <-- make sure there is no "/" at the end of this URL -- should look something like "https://study-template-default-rtdb.firebaseio.com"
 const EMAIL_HASHES_DIRECT_URL = FIREBASE_DATABASE_URL + '/email_hashes';
 
 // =====================================================
@@ -2960,7 +2960,7 @@ function formatDateDDMMYYYY(input) {
 // for your main JSON data storage (accept new data, validation ON, no required fields).
 // Until then, every completion is saved to localStorage as a safety
 // net — no participant data will be lost.
-const DATAPIPE_EXPERIMENT_ID = '[REPLACE ME! Datapipe Main Experiment ID]';
+const DATAPIPE_EXPERIMENT_ID = '0e6GR0QQhcLG';
 // Uploads go through our OWN domain (/api/upload proxies to DataPipe/Dataverse
 // server-side) so ad-blockers / privacy browsers / firewalls that block the
 // third-party pipe.jspsych.org can't break participant uploads. Same-origin
@@ -3213,7 +3213,7 @@ async function fetchWithRetry(url, options, tries = 4) {
 }
 
 async function sendToDataPipe(payload) {
-  if (!DATAPIPE_EXPERIMENT_ID || DATAPIPE_EXPERIMENT_ID === '[REPLACE ME! Datapipe Main Experiment ID]') { // <-- DON'T replace this "REPLACE ME" string with your Datapipe experiment ID -- this is checking to make sure you actually updated the value from the default template string
+  if (!DATAPIPE_EXPERIMENT_ID || DATAPIPE_EXPERIMENT_ID === '0e6GR0QQhcLG') { // <-- DON'T replace this "REPLACE ME" string with your Datapipe experiment ID -- this is checking to make sure you actually updated the value from the default template string
     console.warn('DataPipe ID not configured — data only saved locally.');
     return false;
   }
@@ -3525,7 +3525,7 @@ function discardSnapshotAndStartFresh() {
 // (accept new data, accept Base64 files, validation OFF).
 // Until then, every completion is saved to localStorage as a safety
 // net — no participant data will be lost.
-const DATAPIPE_CONSENT_EXPERIMENT_ID = '[REPLACE ME! Datapipe Consent Experiment ID]';
+const DATAPIPE_CONSENT_EXPERIMENT_ID = 'snmC8hxbvNMJ';
 // First-party proxy (see DATAPIPE_URL above); base64 payloads route to the
 // DataPipe /api/base64/ endpoint via ?type=base64.
 const DATAPIPE_BASE64_URL = '/api/upload?type=base64';
@@ -3611,7 +3611,7 @@ function generateConsentPDF(participantId, condition, consentValue, email) {
 }
 
 async function sendConsentPDFToDataPipe(filename, base64Data) {
-  if (!DATAPIPE_CONSENT_EXPERIMENT_ID || DATAPIPE_CONSENT_EXPERIMENT_ID === '[REPLACE ME! Datapipe Consent Experiment ID]') { // <-- DON'T replace this "REPLACE ME" string
+  if (!DATAPIPE_CONSENT_EXPERIMENT_ID || DATAPIPE_CONSENT_EXPERIMENT_ID === 'snmC8hxbvNMJ') { // <-- DON'T replace this "REPLACE ME" string
     console.warn('Consent DataPipe ID not configured — consent PDF saved locally only.');
     return false;
   }
@@ -3696,7 +3696,7 @@ async function captureConsentPDF(completedAt) {
 // Until then, every completion is saved to localStorage as a safety
 // net — no participant data will be lost.
 // =====================================================
-const DATAPIPE_XLSX_EXPERIMENT_ID = '[REPLACE ME! Datapipe XLSX Experiment ID]';
+const DATAPIPE_XLSX_EXPERIMENT_ID = 'MGAhDFWE859A';
 const LOCALSTORAGE_PENDING_XLSX_KEY = 'hpl_pending_xlsx_files';
 
 // Transposes an array-of-arrays (rows of cells) into the column-major
@@ -3836,7 +3836,7 @@ function buildParticipantXLSX(payload) {
 }
 
 async function sendXLSXToDataPipe(filename, base64) {
-  if (!DATAPIPE_XLSX_EXPERIMENT_ID || DATAPIPE_XLSX_EXPERIMENT_ID === '[REPLACE ME! Datapipe XLSX Experiment ID]') { // <-- DON'T replace this "REPLACE ME" string
+  if (!DATAPIPE_XLSX_EXPERIMENT_ID || DATAPIPE_XLSX_EXPERIMENT_ID === 'MGAhDFWE859A') { // <-- DON'T replace this "REPLACE ME" string
     console.warn('XLSX DataPipe ID not configured — XLSX file saved locally only.');
     return false;
   }
@@ -4720,7 +4720,7 @@ async function readEmailHashDirectly(hash) {
 // Until then, every completion is saved to localStorage as a safety
 // net — no participant data will be lost.
 // =====================================================
-const DATAPIPE_EMAIL_EXPERIMENT_ID = '[REPLACE ME! Datapipe Email Experiment ID]';
+const DATAPIPE_EMAIL_EXPERIMENT_ID = 'y4826nckIFUN';
 const LOCALSTORAGE_PENDING_EMAIL_KEY = 'hpl_pending_email_files';
 
 // SHA-256 of a normalized email, hex-encoded. Used to compare
@@ -4736,7 +4736,7 @@ function normalizeEmail(email) {
 }
 
 async function sendEmailFileToDataverse(filename, base64Data) {
-  if (!DATAPIPE_EMAIL_EXPERIMENT_ID || DATAPIPE_EMAIL_EXPERIMENT_ID === '[REPLACE ME! Datapipe Email Experiment ID]') { // <-- DON'T replace this "REPLACE ME" string
+  if (!DATAPIPE_EMAIL_EXPERIMENT_ID || DATAPIPE_EMAIL_EXPERIMENT_ID === 'y4826nckIFUN') { // <-- DON'T replace this "REPLACE ME" string
     console.warn('Email DataPipe ID not configured — email file saved locally only.');
     return false;
   }
