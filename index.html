@@ -2053,49 +2053,11 @@
     </div>
   </section>
 
-  <!-- ============ CRT INTRO ============ -->
-  <section class="screen" id="screen-crt-intro">
-    <span class="tag">A few more questions</span>
-    <h1>Five short questions</h1>
-    <div class="card-soft">
-      <p style="margin-bottom:0;">We are going to ask you some more questions. Try to give your best answer, or if a question seems tricky, try your best guess.</p>
-    </div>
-    <div class="actions">
-      <div class="spacer"></div>
-      <button class="btn primary" onclick="startCRT()">Ready</button>
-    </div>
-  </section>
-
-  <!-- ============ CRT ITEMS (one at a time) ============ -->
-  <section class="screen" id="screen-crt-items">
-    <div class="single-item-wrap">
-      <div class="single-item-progress">
-        <span id="crt-counter">1 of 5</span>
-        <div class="dots" id="crt-dots"></div>
-      </div>
-
-      <div class="single-item-card">
-        <h2 class="single-item-prompt" id="crt-prompt">Problem text goes here</h2>
-        <label for="crt-answer" id="crt-answer-label" style="font-size:13px; color:var(--ink-muted); margin-bottom:8px;">Your answer</label>
-        <div class="crt-input-row">
-          <input type="number" step="any" id="crt-answer" placeholder="Answer" aria-labelledby="crt-prompt crt-answer-label" />
-          <span class="unit" id="crt-unit">units</span>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button class="btn ghost small" id="crt-back" onclick="crtPrev()" style="display:none;">Back</button>
-        <div class="spacer"></div>
-        <button class="btn primary" id="crt-next" onclick="crtNext()">Continue</button>
-      </div>
-    </div>
-  </section>
-
   <!-- ============ Science Instructor QUESTIONS ============ -->
   <section class="screen" id="screen-si-questions">
     <span class="tag">Your Science Instructor</span>
-    <h1>About your Science Instructor/h1>
-    <p>The following statements are about your Scinece Instructor (SI). There are no right or wrong answers. Your responses are confidential and will not be shared with your SI or anyone on the course teaching team.</p>
+    <h1>About your Science Instructor</h1>
+    <p>The following statements are about your Science Instructor (SI). There are no right or wrong answers. Your responses are confidential and will not be shared with your SI or anyone on the course teaching team.</p>
     <div class="card">
       <div id="likert-si"></div>
     </div>
@@ -2182,6 +2144,7 @@
       <h3>One idea to remember</h3>
       <p><b>The impetus view can feel right because everyday motion usually occurs in the presence of forces we may not notice. But the scientifically accepted Newtonian view says that motion does not need a force to continue: force is needed to change motion.</b></p>
 
+      <h3>If you would like to learn more</h3>
       <ul class="refs">
         <li>Bascandziev, I., Abutto, A., Walker, C. M., &amp; Bonawitz, E. (2025). Mind over matter: consistency monitoring and domain-specific learning. <i>Frontiers in Developmental Psychology, 3</i>. https://doi.org/10.3389/fdpys.2025.1496651</li>
         <li>Bascandziev, I. (2024). Thought Experiments as an Error Detection and Correction Tool. <i>Cognitive Science, 48</i>(1), e13401. https://doi.org/10.1111/cogs.13401</li>
@@ -2338,7 +2301,6 @@ const SCREENS = [
   'landing','email','consent','instructions','ground-rules','framing','lesson','chatbot',
   'learning-intro','learning-items',
   'exp-lesson','exp-chatbot','manipulation-check',
-  'crt-intro','crt-items',
   'si-questions','demographics',
   'lesson-debrief','study-debrief','complete','already-completed'
 ];
@@ -3214,8 +3176,6 @@ function buildParticipantPayload() {
 
     si_perceptions: _buildLikertSection(SI_ITEMS, r.si || {}, r.si_order || []),
 
-    crt: _buildCrtSection(r.crt || {}, crtTimings),
-
     manipulation_check: {
       prompt: MANIP_PROMPT,
       selected_options: r.manipulation_check || []
@@ -3411,9 +3371,6 @@ async function saveParticipantData() {
   // Step 1: claim the next sequential P00X. Only done now, at the
   // moment of successful completion — so dropouts never consume an ID.
   await claimSequentialParticipantId();
-
-  // Score the CRT server-side before building the payload (best-effort).
-  await scoreCrtFromBackend();
 
   // Step 2: build the payload with the (now sequential) participantId
   // and ALWAYS write a localStorage backup before touching the network.
@@ -3831,17 +3788,6 @@ function buildParticipantXLSX(payload) {
     });
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(learnRows)), 'Learning');
-
-  // ---- Sheet 3: CRT (column per problem) ----
-  const crtRows = [['item_id', 'problem', 'participant_answer']];
-  ((payload.crt && payload.crt.items) || []).forEach(it => {
-    crtRows.push([
-      it.id,
-      it.problem,
-      it.participant_answer != null ? it.participant_answer : ''
-    ]);
-  });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(crtRows)), 'CRT');
 
   // ---- Sheet 4: Consent ----
   const consent = payload.consent || {};
@@ -4262,10 +4208,6 @@ function goTo(screenId) {
   if (screenId === 'exp-lesson') renderLikert('likert-exp-lesson', EXP_LESSON_ITEMS, 'exp_lesson');
   if (screenId === 'exp-chatbot') renderLikert('likert-exp-chatbot', EXP_CHATBOT_ITEMS, 'exp_chatbot');
   if (screenId === 'manipulation-check') renderManipCheck();
-  if (screenId === 'crt-items') {
-    if (!state.crtQueue) { state.crtQueue = shuffle(CRT_ITEMS); state.crtIndex = 0; }
-    renderCRTItem();
-  }
   if (screenId === 'si-questions') renderLikert('likert-si', SI_ITEMS, 'si');
   if (screenId === 'demographics') renderDemographics();
   if (screenId === 'study-debrief') renderVisibleDebrief();
@@ -4286,69 +4228,97 @@ function updateProgress() {
 // =====================================================
 const LEARNING_ITEMS_RAW = {
   open_response: {
-    sectionLabel: 'Part 1 of 3 · Explain in your own words',
-    maxWords: 60,
-    items: [
-      { id: 'or_naive_theory', prompt: 'In your own words, please briefly explain what a naïve theory is.' },
-      { id: 'or_consistency_monitoring', prompt: 'In your own words, please briefly explain what consistency monitoring is.' },
-      { id: 'or_thought_experiment_contradiction', prompt: 'How can a thought experiment help a learner notice that two explanations make contradictory predictions about the same situation?' },
-      { id: 'or_naive_theory_persistence', prompt: 'In your own words, why do naïve theories persist even when learners encounter evidence that contradicts them?' },
-      { id: 'or_belief_revision_outcome', prompt: 'According to the lesson, when a learner revises a belief, what happens to the explanation they originally held? Explain in your own words.' },
-      { id: 'or_thought_experiment_vs_fact', prompt: 'According to the lesson, are thought experiments just another way of giving a learner another fact or example? Explain why or why not.' },
-      { id: 'or_belief_weight', prompt: 'In your own words, please briefly explain what it means to say a child believes each explanation "to a different degree," or gives each one a different "belief weight."' },
-      { id: 'or_whales_dolphins', prompt: 'A student has long categorized whales and dolphins as fish because they live in water and have fins. The student then learns that, because they breathe air, give birth to live young, and nurse their offspring, whales are categorized as mammals. After hearing dolphins also give birth to live offspring, the student spontaneously infers that dolphins are mammals as well. Drawing on the lesson, has this child experienced belief revision? Why or why not?' },
-      { id: 'or_plants_telling_not_enough', prompt: 'A child says that plants are not alive because they do not walk, talk, or show feelings. The teacher explains that plants are living organisms. The child writes “plants are alive” on a worksheet. A week later, when asked about a tree stump, the child says it is not alive because “it does not do anything.” Based on the lesson, why might simply telling the child the correct answer not be enough for their understanding?' }
-    ]
-  },
-  multiple_choice: {
-    sectionLabel: 'Part 2 of 3 · Multiple choice',
-    maxWords: 60,
-    items: [
-      { id: 'mc_belief_revision', type: 'mc', prompt: "In the lesson, what is belief revision?", options: [
-        { key: 'A', text: "All of the above", pinLast: true },
-        { key: 'B', text: "Replacing an old belief so it is no longer available to the learner." },
-        { key: 'C', text: "Shifting confidence across several beliefs the learner already holds." },
-        { key: 'D', text: "Adding information that fits without changing the learner’s beliefs." }
-      ] },
-      { id: 'mc_thought_experiments', type: 'mc', prompt: "Why can thought experiments support belief revision, according to the lesson?", options: [
-        { key: 'A', text: "They ask learners to apply the scientific explanation to a new case, making transfer beyond the taught example more likely." },
-        { key: 'B', text: "They ask learners to imagine a situation and trace what their own explanation predicts, making hidden contradictions easier to notice." },
-        { key: 'C', text: "They ask learners to observe a real example and compare it with new evidence, making wrong beliefs easier to reject." },
-        { key: 'D', text: "They ask learners to compare two explanations across several cases, making the more coherent explanation easier to identify." }
-      ] },
-      { id: 'mc_motion_ball', type: 'mc', prompt: "A child says a ball moving through empty space will slow down because its inner push fades. The same child also says nothing can slow the ball if nothing touches it. What does a thought experiment reveal?", options: [
-        { key: 'A', text: "The child lacks any explanation of motion and needs the Newtonian rule before reasoning begins." },
-        { key: 'B', text: "The child has replaced the impetus explanation but lacks the correct scientific vocabulary." },
-        { key: 'C', text: "The child has two explanations that make incompatible predictions about the same imagined case." },
-        { key: 'D', text: "The child needs another ordinary example so the naive theory can be enriched with more detail." }
-      ] },
-      { id: 'mc_plants_learning_type', type: 'mc', prompt: "A student already knows that plants need sunlight to grow and then learns that plants also require certain minerals from the soil. Drawing on the lesson, what kind of learning is this best understood as?", options: [
-        { key: 'A', text: "Enrichment" },
-        { key: 'B', text: "Conceptual replacement" },
-        { key: 'C', text: "Consistency monitoring" },
-        { key: 'D', text: "Naive theory persistence" }
-      ] },
-      { id: 'mc_impetus_explanation', type: 'mc', prompt: "In the lesson’s motion example, what is the child’s impetus-based explanation of motion?", options: [
-        { key: 'A', text: "The false belief that a moving object carries an inner push that gradually fades, so the object slows down on its own." },
-        { key: 'B', text: "The false belief that a moving object keeps moving at the same speed unless an outside force acts on it." },
-        { key: 'C', text: "The correct belief that a moving object carries an inner push that gradually fades, so the object slows down on its own." },
-        { key: 'D', text: "The correct belief that a moving object keeps moving at the same speed unless an outside force acts on it." }
-      ] },
-      { id: 'mc_holding_old_explanation', type: 'mc', prompt: "According to the lesson, why might a child continue using an old explanation even after being told the correct scientific answer that contradicts the older one?", options: [
-        { key: 'A', text: "The correct new explanation completely overwrites the old explanation when it is learned, so in cases when children deploy older explanations, it suggests they are reconstructing the “older” idea on the fly, from the evidence given in the problem." },
-        { key: 'B', text: "Children cannot hold two explanations at once, even implicitly, so the old one stays in use until the correct one is repeated enough to fully replace it." },
-        { key: 'C', text: "The child may hold both explanations but choose the old one because it is more surprising with respect to the data and they are testing their theory by using it." },
-        { key: 'D', text: "The child may still have access to the old explanation, even after hearing the scientific one and not recognize the contradiction nor appropriately apply the scientific explanation to new problems." }
-      ] }
-    ]
-  },
-  consistency: {
-    sectionLabel: 'Part 3 of 3 · One last question',
-    maxWords: 60,
-    items: [
-      { id: 'consistency_1', prompt: 'Imagine the content you just read about here in this study will be shown to another participant. Is there any part of it you would change before showing it to them because it seemed unclear or seemed to contradict itself? Why or why not?' }
-    ]
-  }
+  sectionLabel: 'Learning measure · Written response',
+  maxWords: 60, 
+  items: [
+    { id: 'q05_velocity', order: 5, prompt: 'Define velocity.' },
+    { id: 'q08_impetus', order: 8, prompt: 'According to the impetus view, what happens to the source of motion inside an object over time?' },
+    { id: 'q10_newtonian', order: 10, prompt: 'Why does the Newtonian explanation say that no force is needed to keep an object moving at constant velocity?' },
+    { id: 'q11_friction', order: 11, prompt: 'Why does reducing friction make it easier to distinguish between the impetus and Newtonian explanations?' },
+    { id: 'q12_convincing', order: 12, prompt: 'Why can the impetus idea feel convincing to people even when it is not the correct scientific explanation?' },
+    { id: 'q13_cart', order: 13, prompt: 'Imagine you push an empty shopping cart hard across a flat parking lot and let go, and it gradually slows down and stops. The next day, you push the same cart with the same force across a smooth floor indoors, and it travels much farther before stopping. Which explanation, impetus or Newtonian, better fits observations, and why?' },
+    { id: 'q14_passenger', order: 14, prompt: 'A passenger is sitting in a car that suddenly brakes hard. Their body lurches forward even though nothing pushes them. Use Newton\'s First Law to explain why this happens.' },
+    { id: 'q15_magician', order: 15, prompt: 'A magician yanks a tablecloth out from under a set of dishes, and the dishes barely move. Use Newton\'s First Law to explain why the dishes stay roughly in place.' }
+  ]
+},
+multiple_choice: {
+  sectionLabel: 'Learning measure · Multiple choice',
+  maxWords: 60,
+  items: [
+    {
+      id: 'q01_train_ball', order: 1, type: 'mc',
+      prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the train, a fixed mechanical claw holds a ball halfway along the ceiling between the front and rear of the car. The ball is released. Ignore air resistance; there is no wind inside the car. Where will the ball fall?',
+      options: [
+        { key: 'A', text: 'Behind the halfway point of the car floor' },
+        { key: 'B', text: 'Exactly on the halfway point of the car floor' }
+      ]
+    },
+    {
+      id: 'q02_hovercraft_east', order: 2, type: 'mc',
+      prompt: 'A hovercraft is moving from east toward west at a constant velocity of 70 MPH in a straight line. The water surface is perfectly smooth, the hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a painting hung on the north wall, 20 ft above the floor level. At one point, the nail gets loose and the painting falls freely without touching the wall. Please ignore air resistance. There is no wind inside the cabin. The painting will fall:',
+      options: [
+        { key: 'A', text: 'Directly below the place it was hung' },
+        { key: 'B', text: 'Away from the place it was hung, in a direction opposite from the hovercraft\'s motion' }
+      ]
+    },
+    {
+      id: 'q03_cannonball', order: 3, type: 'mc',
+      prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the cabin, there is a compressed spring on the floor of the car, located half way along the front and the rear ends of the cabin. There is a cannonball resting on top of the spring. At one point, the spring is released, and the cannonball is shot upward in a perfect straight trajectory. The cannonball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The cannonball will fall:',
+      options: [
+        { key: 'A', text: 'Behind the halfway point of the car floor' },
+        { key: 'B', text: 'Exactly on the halfway point of the car floor, on top of the spring' }
+      ]
+    },
+    {
+      id: 'q04_hovercraft_straight', order: 4, type: 'mc',
+      prompt: 'A hovercraft is moving at a constant velocity of 70 MPH in a straight line. The hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a compressed spring on the floor of the craft, located half way along the front and the rear ends of the cabin. There is a ball resting on top of the spring. At one point, the spring is released, and the ball is shot upward in a perfect straight trajectory. The ball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The ball\'s downward trajectory will be:',
+      options: [
+        { key: 'A', text: 'Perfectly straight' },
+        { key: 'B', text: 'Slightly curved' }
+      ]
+    },
+    {
+      id: 'q06_first_law', order: 6, type: 'mc',
+      prompt: 'What does Newton\'s First Law state',
+      options: [
+        { key: 'A', text: 'The acceleration of an object is equal to the net force acting on it divided by its mass' },
+        { key: 'B', text: 'An object stays at rest or keeps moving at constant velocity unless a net force acts on it' },
+        { key: 'C', text: 'When one object exerts a force on another, the second object exerts an equal and opposite force back'},
+        { key: 'D', text: 'The total momentum of a system stays constant when no outside force acts on the system' }
+      ]
+    },
+    {
+      id: 'q07_net_force', order: 7, type: 'mc',
+      prompt: 'What is meant by net force?',
+      options: [
+        { key: 'A', text: ' The single strongest force pushing or pulling on the object' },
+        { key: 'B', text: 'The force the object needs in order to keep moving at constant velocity.' },
+        { key: 'C', text: 'The combined effect of all the forces acting on the object'},
+        { key: 'D', text: 'The force produced by the object itself as it moves'}
+      ]
+    },
+    {
+      id: 'q09_book', order: 9, type: 'mc',
+      prompt: 'According to the Newtonian explanation, why does a book pushed across a table slow down and come to rest?',
+      options: [
+        { key: 'A', text: ' The push the book received gradually wears off, and once it is gone the book has nothing left to keep it moving' },
+        { key: 'B', text: 'Gravity pulls the book downward and this downward pull slowly stops its horizontal motion' },
+        { key: 'C', text: 'The book returns to its natural state of rest, which is the state all objects tend toward'},
+        { key: 'D', text: 'Friction between the book and the table acts against the motion, producing a net force that reduces the book\'s velocity'}
+      ]
+    },
+    {
+      id: 'q16_image', order: 16, type: 'mc',
+      prompt: 'What about something like this?',
+      options: [
+        { key: 'A', text: 'add picture' },
+        { key: 'B', text: 'add picture' },
+        { key: 'C', text: 'add picture'},
+        { key: 'D', text: 'add picture'}
+      ]
+    }
+  ]
+}
 };
 
 function countWords(str) {
@@ -4395,23 +4365,21 @@ function shuffleAvoidingReverseAdjacent(items) {
 
 function buildLearningQueue() {
   const queue = [];
-  // Open-response and multiple-choice items are pooled and shuffled
-  // TOGETHER, so the two formats interleave in a per-participant random
-  // order rather than appearing as separate blocks.
-  const pool = [];
+
   ['open_response', 'multiple_choice'].forEach(subscale => {
     const cfg = LEARNING_ITEMS_RAW[subscale];
     cfg.items.forEach(it => {
-      pool.push({ ...it, subscale, sectionLabel: cfg.sectionLabel, maxWords: cfg.maxWords,
-        displayOptions: it.type === 'mc' ? shuffleOptions(it.options) : undefined });
+      queue.push({
+        ...it,
+        subscale,
+        sectionLabel: cfg.sectionLabel,
+        maxWords: cfg.maxWords,
+        displayOptions: it.type === 'mc' ? shuffleOptions(it.options) : undefined
+      });
     });
   });
-  shuffle(pool).forEach(it => queue.push(it));
-  // Consistency item always comes last (not shuffled into the others)
-  LEARNING_ITEMS_RAW.consistency.items.forEach(it => {
-    queue.push({ ...it, subscale: 'consistency', sectionLabel: LEARNING_ITEMS_RAW.consistency.sectionLabel, maxWords: LEARNING_ITEMS_RAW.consistency.maxWords });
-  });
-  return queue;
+
+  return queue.sort((a, b) => a.order - b.order);
 }
 
 state.learningQueue = null;
@@ -5208,7 +5176,7 @@ function afterLessonRoute() {
 }
 
 function afterExpLessonRoute() {
-  if (state.condition === 'baseline') goTo('crt-intro');
+  if (state.condition === 'baseline') goTo('si-questions');
   else goTo('exp-chatbot');
 }
 
@@ -5712,10 +5680,17 @@ function toggleSelected(input) {
 }
 
 function submitManipulationCheck() {
-  const selected = Array.from(document.querySelectorAll('#manipcheck-options input:checked')).map(i => i.value);
-  if (selected.length === 0) { alert('Please select at least one option.'); return; }
+  const selected = Array.from(
+    document.querySelectorAll('#manipcheck-options input:checked')
+  ).map(i => i.value);
+
+  if (selected.length === 0) {
+    alert('Please select at least one option.');
+    return;
+  }
+
   state.responses.manipulation_check = selected;
-  goTo('crt-intro');
+  goTo('si-questions');
 }
 
 // =====================================================
