@@ -1872,10 +1872,36 @@
             <polyline points="12 5 19 12 12 19"/>
           </svg>
         </div>
-        <button class="btn primary" id="framing-continue" disabled onclick="goTo('lesson')">Next</button>
+        <button class="btn primary" id="framing-continue" disabled onclick="goTo('pre-test')">Next</button>
       </div>
     </div>
   </section>
+
+    <!-- ============ PRE-TEST ============ -->
+    <section class="screen" id="screen-pre-test">
+      <span class="tag">Before the lesson</span>
+      <h1>A few questions about motion</h1>
+
+      <div class="learning-intro-body">
+        <p>Before you begin the lesson, we are going to ask you a few questions about motion. These questions are intended to assess your initial understanding. We do not expect you to be familiar with all the concepts, but please do your best and answer as fully as you can. Ready?</p>
+      </div>
+
+      <div class="actions" id="pre-test-ready">
+        <div class="spacer"></div>
+        <button class="btn primary" onclick="startPretest()">I'm ready</button>
+      </div>
+
+      <div id="pre-test-body" hidden>
+        <div id="pre-test-questions"></div>
+
+        <div class="actions">
+          <div class="spacer"></div>
+          <button class="btn primary" onclick="submitPretest()">
+            Continue to the lesson
+          </button>
+        </div>
+      </div>
+    </section>
 
     <!-- ============ LESSON ============ -->
     <section class="screen" id="screen-lesson">
@@ -2298,7 +2324,7 @@ const state = {
 };
 
 const SCREENS = [
-  'landing','email','consent','instructions','ground-rules','framing','lesson','chatbot',
+  'landing','email','consent','instructions','ground-rules','framing', 'pre-test','lesson','chatbot',
   'learning-intro','learning-items',
   'exp-lesson','exp-chatbot','manipulation-check',
   'si-questions','demographics',
@@ -3103,6 +3129,48 @@ function _buildDemographicsSection(answers) {
   };
 }
 
+function buildPretestPayload() {
+  const plan = state.responses.pretest;
+
+  if (!plan) {
+    return {
+      item_order: [],
+      items: []
+    };
+  }
+
+  return {
+    item_order: [...plan.item_order],
+    started_at_iso: plan.started_at_iso,
+    completed_at_iso: plan.completed_at_iso,
+
+    items: plan.item_order.map((id, index) => {
+      const item = LEARNING_ITEMS_RAW.multiple_choice.items.find(
+        it => it.id === id
+      );
+
+      const answer = plan.answers[id] || {};
+
+      return {
+        id,
+        prompt: item.prompt,
+        question_type: 'multiple_choice',
+        position_shown: index + 1,
+
+        options: item.options.map(option => ({
+          key: option.key,
+          text: option.text
+        })),
+
+        presented_order: [...plan.option_order[id]],
+        participant_selected_key: answer.selected_key || null,
+        participant_selected_text: answer.selected_text || null,
+        answered_at_iso: answer.answered_at_iso || null
+      };
+    })
+  };
+}
+
 function buildParticipantPayload() {
   const now = new Date();
   const started = state.startedAt ? new Date(state.startedAt) : null;
@@ -3163,7 +3231,10 @@ function buildParticipantPayload() {
       consent_pdf_filename: null
     },
 
+    pre_test: buildPretestPayload(),
+
     learning_measure: {
+      item_order: (state.learningQueue || []).map(item => item.id),
       open_response:          _buildLearningSection('open_response',   'Part 1 of 3 · Explain in your own words', r.open_response   || {}, learningTimings),
       multiple_choice:        _buildLearningSection('multiple_choice', 'Part 2 of 3 · Multiple choice',          r.multiple_choice || {}, learningTimings),
       consistency_monitoring: _buildLearningSection('consistency',     'Part 3 of 3 · One last question',         r.consistency     || {}, learningTimings)
@@ -3433,7 +3504,7 @@ async function uploadRawUntilConfirmed(payload, statusEl) {
 // saved under the previous key are effectively ignored, which prevents a
 // participant from resuming into a stale learning queue built from the
 // previous item set.
-const SESSION_SNAPSHOT_KEY = 'hpl_session_snapshot_v3';
+const SESSION_SNAPSHOT_KEY = 'adolescent_session_snapshot_v4_pretest';
 const SESSION_SNAPSHOT_MAX_AGE_HOURS = 72;
 
 function snapshotSession() {
@@ -3771,6 +3842,46 @@ function buildParticipantXLSX(payload) {
     ]);
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(convoRows), 'Chatbot Conversation');
+
+  // ---- Pre-test (row per question) ----
+  const preRows = [[
+  'item_id',
+  'position_shown',
+  'prompt',
+  'selected_key',
+  'selected_text',
+  'option_order'
+]];
+
+(payload.pre_test?.items || []).forEach(item => {
+  preRows.push([
+    item.id,
+    item.position_shown,
+    item.prompt,
+    item.participant_selected_key || '',
+    item.participant_selected_text || '',
+    (item.presented_order || []).join(', ')
+  ]);
+});
+
+XLSX.utils.book_append_sheet(
+  wb,
+  XLSX.utils.aoa_to_sheet(preRows),
+  'Pre-test'
+);
+
+// ---- Post-test presentation order (row per question) ----
+const postOrderRows = [['position_shown', 'item_id']];
+
+(payload.learning_measure?.item_order || []).forEach((id, index) => {
+  postOrderRows.push([index + 1, id]);
+});
+
+XLSX.utils.book_append_sheet(
+  wb,
+  XLSX.utils.aoa_to_sheet(postOrderRows),
+  'Post-test Order'
+);
 
   // ---- Sheet 2: Learning measure (column per question) ----
   const learnRows = [['item_id', 'prompt', 'response', 'word_count']];
@@ -4202,6 +4313,18 @@ function goTo(screenId) {
   if (screenId === 'chatbot') { precomputeCuratedRepoEmbeddings(); loadFirebaseCacheMirror(); renderVisibilityBanner(); renderChatbotWelcome(); }
   if (screenId === 'complete') saveParticipantData();
 
+  if (screenId === 'pre-test') {
+    renderPretest();
+  }
+
+  if (screenId === 'learning-items') {
+    if (!state.learningQueue) {
+      state.learningQueue = buildLearningQueue();
+    }
+
+    renderLearningItem();
+  }
+
   // Snapshot the in-progress session to localStorage so a participant
   // who closes the tab mid-study can resume on the next page load.
   snapshotSession();
@@ -4363,23 +4486,196 @@ function shuffleAvoidingReverseAdjacent(items) {
   return shuffle(items); // extremely unlikely fallback
 }
 
+// The four questions repeated before and after the lesson.
+const PRETEST_ITEM_IDS = [
+  'q01_train_ball',
+  'q02_hovercraft_east',
+  'q03_cannonball',
+  'q04_hovercraft_straight'
+];
+
+// Generate the question and answer-choice orders only once.
+// Store them in responses so the existing snapshot system saves them.
+function ensurePretestPlan() {
+  if (!state.responses.pretest) {
+    const items = LEARNING_ITEMS_RAW.multiple_choice.items;
+
+    state.responses.pretest = {
+      item_order: shuffle(PRETEST_ITEM_IDS),
+
+      option_order: Object.fromEntries(
+        PRETEST_ITEM_IDS.map(id => {
+          const item = items.find(it => it.id === id);
+
+          return [
+            id,
+            shuffleOptions(item.options).map(option => option.key)
+          ];
+        })
+      ),
+
+      answers: {},
+      started_at_iso: null,
+      completed_at_iso: null
+    };
+  }
+
+  return state.responses.pretest;
+}
+
+// Return an item's options in its saved order.
+function getPretestOptions(item, plan) {
+  return plan.option_order[item.id].map(
+    key => item.options.find(option => option.key === key)
+  );
+}
+
+function renderPretest() {
+  const plan = ensurePretestPlan();
+  const items = LEARNING_ITEMS_RAW.multiple_choice.items;
+
+  document.getElementById('pre-test-ready').style.display =
+    plan.started_at_iso ? 'none' : 'flex';
+
+  document.getElementById('pre-test-body').hidden =
+    !plan.started_at_iso;
+
+  const container = document.getElementById('pre-test-questions');
+
+  container.innerHTML = plan.item_order.map((id, index) => {
+    const item = items.find(it => it.id === id);
+    const savedAnswer = plan.answers[id];
+    const selectedKey = savedAnswer ? savedAnswer.selected_key : null;
+
+    return `
+      <fieldset class="card" style="margin-top:24px; min-width:0;">
+        <legend style="font-weight:600;">
+          Question ${index + 1} of 4
+        </legend>
+
+        <p>${escapeHtml(item.prompt)}</p>
+
+        ${getPretestOptions(item, plan).map(option => `
+          <label
+            class="li-mc-option"
+            style="display:block; padding:12px 14px; margin:8px 0;
+                   border:1px solid var(--rule); border-radius:8px;
+                   cursor:pointer;"
+          >
+            <input
+              type="radio"
+              name="pre_${id}"
+              value="${option.key}"
+              data-pretest-id="${id}"
+              ${selectedKey === option.key ? 'checked' : ''}
+            />
+            <span>${escapeHtml(option.text)}</span>
+          </label>
+        `).join('')}
+      </fieldset>
+    `;
+  }).join('');
+
+  // Save each selection immediately, including for session resumption.
+  container.querySelectorAll('input[data-pretest-id]').forEach(input => {
+    input.addEventListener('change', () => {
+      const item = items.find(
+        it => it.id === input.dataset.pretestId
+      );
+
+      const option = item.options.find(
+        opt => opt.key === input.value
+      );
+
+      plan.answers[item.id] = {
+        selected_key: option.key,
+        selected_text: option.text,
+        presented_order: [...plan.option_order[item.id]],
+        answered_at_iso: new Date().toISOString()
+      };
+
+      snapshotSession();
+    });
+  });
+}
+
+function startPretest() {
+  const plan = ensurePretestPlan();
+
+  if (!plan.started_at_iso) {
+    plan.started_at_iso = new Date().toISOString();
+  }
+
+  renderPretest();
+  snapshotSession();
+
+  document.querySelector('#pre-test-questions input')?.focus();
+}
+
+function submitPretest() {
+  const plan = ensurePretestPlan();
+
+  const missingId = plan.item_order.find(
+    id => !plan.answers[id]?.selected_key
+  );
+
+  if (missingId) {
+    alert('Please answer all four questions before continuing.');
+
+    document.querySelector(
+      `input[name="pre_${missingId}"]`
+    )?.focus();
+
+    return;
+  }
+
+  if (!plan.completed_at_iso) {
+    plan.completed_at_iso = new Date().toISOString();
+  }
+
+  goTo('lesson');
+}
+
 function buildLearningQueue() {
-  const queue = [];
+  const plan = ensurePretestPlan();
+  const pool = [];
 
   ['open_response', 'multiple_choice'].forEach(subscale => {
     const cfg = LEARNING_ITEMS_RAW[subscale];
-    cfg.items.forEach(it => {
-      queue.push({
-        ...it,
+
+    cfg.items.forEach(item => {
+      let displayOptions;
+
+      if (item.type === 'mc') {
+        displayOptions = PRETEST_ITEM_IDS.includes(item.id)
+          ? getPretestOptions(item, plan)
+          : shuffleOptions(item.options);
+      }
+
+      pool.push({
+        ...item,
         subscale,
         sectionLabel: cfg.sectionLabel,
         maxWords: cfg.maxWords,
-        displayOptions: it.type === 'mc' ? shuffleOptions(it.options) : undefined
+        displayOptions
       });
     });
   });
 
-  return queue.sort((a, b) => a.order - b.order);
+  // First: the four repeated questions, in the saved pre-test order.
+  const repeatedQuestions = plan.item_order.map(
+    id => pool.find(item => item.id === id)
+  );
+
+  // Then: all remaining questions, shuffled together.
+  const remainingQuestions = pool.filter(
+    item => !PRETEST_ITEM_IDS.includes(item.id)
+  );
+
+  return [
+    ...repeatedQuestions,
+    ...shuffle(remainingQuestions)
+  ];
 }
 
 state.learningQueue = null;
@@ -4387,10 +4683,13 @@ state.learningIndex = 0;
 state.learningItemTimings = {};
 
 function startLearningItems() {
-  state.learningQueue = buildLearningQueue();
-  state.learningIndex = 0;
+  // Preserve the queue if this participant already started the post-test.
+  if (!state.learningQueue) {
+    state.learningQueue = buildLearningQueue();
+    state.learningIndex = 0;
+  }
+
   goTo('learning-items');
-  renderLearningItem();
 }
 
 function renderLearningItem() {
@@ -4520,6 +4819,7 @@ function learningNext() {
   } else {
     state.learningIndex++;
     renderLearningItem();
+    snapshotSession();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
@@ -4548,6 +4848,7 @@ function learningPrev() {
   if (state.learningIndex > 0) {
     state.learningIndex--;
     renderLearningItem();
+    snapshotSession();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
@@ -5960,6 +6261,7 @@ function resetStudy() {
      'hpl_pending_email_files',
      'hpl_completed'].forEach(k => localStorage.removeItem(k));
   } catch {}
+  clearSessionSnapshot();
   location.reload();
 }
 
