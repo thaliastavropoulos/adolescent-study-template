@@ -1879,26 +1879,64 @@
 
     <!-- ============ PRE-TEST ============ -->
     <section class="screen" id="screen-pre-test">
-      <span class="tag">Before the lesson</span>
-      <h1>A few questions about motion</h1>
 
-      <div class="learning-intro-body">
-        <p>Before you begin the lesson, we are going to ask you a few questions about motion. These questions are intended to assess your initial understanding. We do not expect you to be familiar with all the concepts, but please do your best and answer as fully as you can. Ready?</p>
-      </div>
+      <!-- Instructions shown before clicking "I'm ready" -->
+      <div id="pre-test-intro">
+        <span class="tag">Before the lesson</span>
+        <h1>A few questions about motion</h1>
 
-      <div class="actions" id="pre-test-ready">
-        <div class="spacer"></div>
-        <button class="btn primary" onclick="startPretest()">I'm ready</button>
-      </div>
-
-      <div id="pre-test-body" hidden>
-        <div id="pre-test-questions"></div>
+        <div class="learning-intro-body">
+          <p>Before you begin the lesson, we are going to ask you a few questions about motion. These questions are intended to assess your initial understanding. We do not expect you to be familiar with all the concepts, but please do your best and answer as fully as you can. Ready?</p>
+        </div>
 
         <div class="actions">
           <div class="spacer"></div>
-          <button class="btn primary" onclick="submitPretest()">
-            Continue to the lesson
+          <button class="btn primary" onclick="startPretest()">
+            I'm ready
           </button>
+        </div>
+      </div>
+
+      <!-- One question at a time, using the post-test layout -->
+      <div id="pre-test-body" hidden>
+        <div class="single-item-wrap">
+          <div class="single-item-progress">
+            <span id="pre-counter">1 of 4</span>
+            <div class="dots" id="pre-dots"></div>
+          </div>
+
+          <div class="single-item-card">
+            <h2 class="single-item-prompt" id="pre-prompt">
+              Question goes here
+            </h2>
+
+            <div
+              id="pre-mc"
+              role="radiogroup"
+              aria-labelledby="pre-prompt"
+            ></div>
+          </div>
+
+          <div class="actions">
+            <button
+              class="btn ghost small"
+              id="pre-back"
+              onclick="pretestPrev()"
+              style="display:none;"
+            >
+              Back
+            </button>
+
+            <div class="spacer"></div>
+
+            <button
+              class="btn primary"
+              id="pre-next"
+              onclick="submitPretest()"
+            >
+              Continue
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -4532,71 +4570,103 @@ function getPretestOptions(item, plan) {
 
 function renderPretest() {
   const plan = ensurePretestPlan();
-  const items = LEARNING_ITEMS_RAW.multiple_choice.items;
 
-  document.getElementById('pre-test-ready').style.display =
-    plan.started_at_iso ? 'none' : 'flex';
+  // Store the current question position in the saved pre-test data.
+  if (!Number.isInteger(plan.current_index)) {
+    plan.current_index = 0;
+  }
 
-  document.getElementById('pre-test-body').hidden =
-    !plan.started_at_iso;
+  const started = !!plan.started_at_iso;
 
-  const container = document.getElementById('pre-test-questions');
+  document.getElementById('pre-test-intro').hidden = started;
+  document.getElementById('pre-test-body').hidden = !started;
 
-  container.innerHTML = plan.item_order.map((id, index) => {
-    const item = items.find(it => it.id === id);
-    const savedAnswer = plan.answers[id];
-    const selectedKey = savedAnswer ? savedAnswer.selected_key : null;
+  if (!started) return;
 
-    return `
-      <fieldset class="card" style="margin-top:24px; min-width:0;">
-        <legend style="font-weight:600;">
-          Question ${index + 1} of 4
-        </legend>
+  const index = plan.current_index;
+  const total = plan.item_order.length;
+  const itemId = plan.item_order[index];
 
-        <p>${escapeHtml(item.prompt)}</p>
+  const item = LEARNING_ITEMS_RAW.multiple_choice.items.find(
+    it => it.id === itemId
+  );
 
-        ${getPretestOptions(item, plan).map(option => `
-          <label
-            class="li-mc-option"
-            style="display:block; padding:12px 14px; margin:8px 0;
-                   border:1px solid var(--rule); border-radius:8px;
-                   cursor:pointer;"
-          >
-            <input
-              type="radio"
-              name="pre_${id}"
-              value="${option.key}"
-              data-pretest-id="${id}"
-              ${selectedKey === option.key ? 'checked' : ''}
-            />
-            <span>${escapeHtml(option.text)}</span>
-          </label>
-        `).join('')}
-      </fieldset>
-    `;
-  }).join('');
+  const options = getPretestOptions(item, plan);
+  const savedAnswer = plan.answers[itemId];
+  const selectedKey = savedAnswer ? savedAnswer.selected_key : null;
 
-  // Save each selection immediately, including for session resumption.
-  container.querySelectorAll('input[data-pretest-id]').forEach(input => {
+  // Question number and prompt.
+  document.getElementById('pre-counter').textContent =
+    `${index + 1} of ${total}`;
+
+  document.getElementById('pre-prompt').textContent = item.prompt;
+
+  // Answer choices, styled like the post-test.
+  const mc = document.getElementById('pre-mc');
+
+  mc.innerHTML = options.map(option => `
+    <label
+      class="li-mc-option"
+      style="display:block; padding:12px 14px; margin:8px 0;
+             border:1px solid var(--rule); border-radius:8px;
+             cursor:pointer; line-height:1.45;"
+    >
+      <input
+        type="radio"
+        name="pre-mc-radio"
+        value="${option.key}"
+        ${selectedKey === option.key ? 'checked' : ''}
+        style="margin-right:10px;"
+      />
+      <span>${escapeHtml(option.text)}</span>
+    </label>
+  `).join('');
+
+  // Save each answer immediately.
+  mc.querySelectorAll('input[name="pre-mc-radio"]').forEach(input => {
     input.addEventListener('change', () => {
-      const item = items.find(
-        it => it.id === input.dataset.pretestId
-      );
+      const option = options.find(opt => opt.key === input.value);
 
-      const option = item.options.find(
-        opt => opt.key === input.value
-      );
-
-      plan.answers[item.id] = {
+      plan.answers[itemId] = {
         selected_key: option.key,
         selected_text: option.text,
-        presented_order: [...plan.option_order[item.id]],
+        presented_order: [...plan.option_order[itemId]],
         answered_at_iso: new Date().toISOString()
       };
 
       snapshotSession();
     });
   });
+
+  // Progress dots.
+  document.getElementById('pre-dots').innerHTML =
+    plan.item_order.map((_, i) => {
+      let className = '';
+
+      if (i < index) className = 'done';
+      else if (i === index) className = 'current';
+
+      return `<div class="dot ${className}"></div>`;
+    }).join('');
+
+  // Navigation buttons.
+  document.getElementById('pre-back').style.display =
+    index > 0 ? 'inline-block' : 'none';
+
+  document.getElementById('pre-next').textContent =
+    index === total - 1 ? 'Continue to the lesson' : 'Continue';
+
+  // Focus the selected answer, or the first choice.
+  const focusTarget =
+    mc.querySelector('input:checked') || mc.querySelector('input');
+
+  if (focusTarget) {
+    try {
+      focusTarget.focus({ preventScroll: true });
+    } catch {
+      focusTarget.focus();
+    }
+  }
 }
 
 function startPretest() {
@@ -4604,36 +4674,51 @@ function startPretest() {
 
   if (!plan.started_at_iso) {
     plan.started_at_iso = new Date().toISOString();
+    plan.current_index = 0;
   }
 
   renderPretest();
   snapshotSession();
-
-  document.querySelector('#pre-test-questions input')?.focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function submitPretest() {
   const plan = ensurePretestPlan();
+  const itemId = plan.item_order[plan.current_index];
 
-  const missingId = plan.item_order.find(
-    id => !plan.answers[id]?.selected_key
-  );
-
-  if (missingId) {
-    alert('Please answer all four questions before continuing.');
-
-    document.querySelector(
-      `input[name="pre_${missingId}"]`
-    )?.focus();
-
+  // Require an answer before moving forward.
+  if (!plan.answers[itemId]?.selected_key) {
+    alert('Please select an answer before continuing.');
+    document.querySelector('#pre-mc input')?.focus();
     return;
   }
 
-  if (!plan.completed_at_iso) {
-    plan.completed_at_iso = new Date().toISOString();
+  // After the final question, proceed to the lesson.
+  if (plan.current_index === plan.item_order.length - 1) {
+    if (!plan.completed_at_iso) {
+      plan.completed_at_iso = new Date().toISOString();
+    }
+
+    goTo('lesson');
+    return;
   }
 
-  goTo('lesson');
+  // Otherwise, display the next question.
+  plan.current_index++;
+  renderPretest();
+  snapshotSession();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function pretestPrev() {
+  const plan = ensurePretestPlan();
+
+  if (plan.current_index > 0) {
+    plan.current_index--;
+    renderPretest();
+    snapshotSession();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 }
 
 function buildLearningQueue() {
