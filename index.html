@@ -472,6 +472,105 @@
     transition: width .5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  #screen-about-you {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .about-you-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    margin-top: 28px;
+  }
+
+  .about-you-table {
+    width: 100%;
+    min-width: 850px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .about-you-table caption {
+    text-align: left;
+    font-size: 19px;
+    font-weight: 600;
+    padding-bottom: 18px;
+  }
+
+  .about-you-table th,
+  .about-you-table td {
+    padding: 16px 10px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: middle;
+  }
+
+  .about-you-table thead th {
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.45;
+  }
+
+  .about-you-table th:first-child {
+    width: 42%;
+    text-align: left;
+  }
+
+  .about-you-table tbody th {
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  .about-you-table tbody tr:nth-child(odd) {
+    background: #f5f7fa;
+  }
+
+  .about-you-table td {
+    text-align: center;
+  }
+
+  .about-you-table .about-you-choice {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 44px;
+    cursor: pointer;
+  }
+
+  .about-you-table input[type="radio"] {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+
+  .background-question {
+    min-width: 0;
+  }
+
+  .background-question legend {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .background-text {
+    width: 100%;
+    padding: 12px 14px;
+    margin-top: 10px;
+    border: 1.5px solid var(--rule);
+    border-radius: 10px;
+    font: inherit;
+    color: var(--ink);
+    background: white;
+  }
+
+  .background-hint {
+    margin: 8px 0 14px;
+    font-size: 14px;
+    color: var(--ink-muted);
+  }
+
   /* === Lesson presentation === */
   .lesson-hero {
     text-align: center;
@@ -1827,9 +1926,76 @@
 
       <div class="actions" style="margin-top:20px;">
         <div class="spacer"></div>
-        <button class="btn primary" id="ground-rules-continue" disabled onclick="goTo('framing')">Next</button>
+        <button class="btn primary" id="ground-rules-continue" disabled onclick="goTo('demographics')">Next</button>
       </div>
 
+    </div>
+  </section>
+
+  <!-- ============ DEMOGRAPHICS ============ -->
+  <section class="screen" id="screen-demographics">
+    <span class="tag">A few questions about you</span>
+    <h1>A few questions about you</h1>
+
+    <p>
+      The next few questions are about you and your schooling.
+      If you prefer not to answer a question, you may select
+      "Prefer not to say" where available.
+    </p>
+
+    <div id="demographics-container"></div>
+
+    <p>
+      You can skip any of the following questions you prefer not to answer.
+    </p>
+
+    <div id="background-questions-container"></div>
+
+    <div class="actions">
+      <div class="spacer"></div>
+      <button class="btn primary" onclick="submitDemographics()">
+        Continue
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT YOU: SELF-DESCRIPTION ============ -->
+  <section class="screen" id="screen-about-you">
+    <span class="tag">About you</span>
+    <h1>About you</h1>
+
+    <p>
+      On this page you will find a series of statements that people might use
+      to describe themselves. For each statement, select the answer that best
+      describes how true the statement is for you. There are no best answers,
+      because people are very different in how they feel about these statements.
+      Please select the first answer that comes to you, and answer every statement.
+    </p>
+
+    <div
+      class="about-you-table-wrap"
+      role="region"
+      aria-label="Self-description questionnaire"
+      tabindex="0"
+    >
+      <table class="about-you-table">
+        <caption>How true is each statement for you?</caption>
+        <thead id="about-you-head"></thead>
+        <tbody id="about-you-body"></tbody>
+      </table>
+    </div>
+
+    <p id="about-you-error" role="alert" hidden></p>
+
+    <div class="actions">
+      <div class="spacer"></div>
+      <button
+        class="btn primary"
+        id="about-you-continue"
+        onclick="submitAboutYou()"
+      >
+        Continue
+      </button>
     </div>
   </section>
 
@@ -2127,21 +2293,10 @@
     </div>
     <div class="actions">
       <div class="spacer"></div>
-      <button class="btn primary" onclick="submitLikert('si', 'demographics')">Continue</button>
+      <button class="btn primary" onclick="submitLikert('si', 'lesson-debrief')">Continue</button>
     </div>
   </section>
 
-  <!-- ============ DEMOGRAPHICS ============ -->
-  <section class="screen" id="screen-demographics">
-    <span class="tag">A few questions about you</span>
-    <h1>Before you finish</h1>
-    <p>Your responses are confidential and will not be linked to your identity. If you prefer not to answer a question, you may select "Prefer not to say."</p>
-    <div id="demographics-container"></div>
-    <div class="actions">
-      <div class="spacer"></div>
-      <button class="btn primary" onclick="submitDemographics()">Continue</button>
-    </div>
-  </section>
 
     <!-- ============ LESSON DEBRIEF ============ -->
   <section class="screen" id="screen-lesson-debrief">
@@ -2338,7 +2493,7 @@ const state = {
   // P-series stays gap-free (every P00X = one completed participant).
   participantId: 'temp-' + Math.random().toString(36).slice(2, 10).toUpperCase(),
   participantEmail: null,
-  condition: localStorage.getItem('hpl_condition') || null,
+  condition: null,
   startedAt: null,
   pageTimings: {},
   responses: {
@@ -2362,10 +2517,10 @@ const state = {
 };
 
 const SCREENS = [
-  'landing','email','consent','instructions','ground-rules','framing', 'pre-test','lesson','chatbot',
+  'landing','email','consent','instructions','ground-rules', 'demographics', 'about-you',
+  'framing', 'pre-test','lesson','chatbot',
   'learning-intro','learning-items',
-  'exp-lesson','exp-chatbot','manipulation-check',
-  'si-questions','demographics',
+  'exp-lesson','exp-chatbot','manipulation-check','si-questions',
   'lesson-debrief','study-debrief','complete','already-completed'
 ];
 
@@ -2447,6 +2602,150 @@ const DEMO_QUESTIONS = [
     'Moderately familiar (I had learned about some of these ideas before but not in depth)',
     'Very familiar (I have studied these ideas in depth before today)'
   ] }
+];
+
+// =====================================================
+// ADDITIONAL BACKGROUND QUESTIONS: DOCUMENT QUESTIONS 2–7
+// =====================================================
+const BACKGROUND_QUESTIONS = [
+  {
+    id: 'AGE',
+    document_number: 2,
+    label: 'How old are you?',
+    options: ['13 or younger','14','15','16','17','18','19 or older','Prefer not to say']
+  },
+  {
+    id: 'SCI_TAKEN',
+    document_number: 3,
+    label: 'Have you taken any science classes in high school?',
+    options: ['Yes', 'No', 'Prefer not to say']
+  },
+  {
+    id: 'SCI_WHICH',
+    document_number: 4,
+    label: 'Which science classes have you taken?',
+    hint: 'Select all that apply.',
+    multi: true,
+    options: ['Biology', 'Chemistry', 'Physics', 'Earth or environmental science', 'AP science', 'Other']
+  },
+  {
+    id: 'GPA',
+    document_number: 5,
+    label: 'What is your approximate GPA from your most recent report card?',
+    hint: 'An approximate answer is fine. If you know both, use your unweighted GPA.',
+    options: ['Below 2.0','2.0 – 2.4','2.5 – 2.9','3.0 – 3.4','3.5 – 3.9','4.0','Above 4.0 (weighted GPA)','I don’t know','Prefer not to say']
+  },
+  {
+    id: 'LANG_HOME',
+    document_number: 6,
+    label: 'What language or languages do you speak at home?',
+    type: 'text'
+  },
+  {
+    id: 'ENG_READ',
+    document_number: 7,
+    label: 'How comfortable are you reading in English?',
+    options: ['Not at all comfortable','A little comfortable','Somewhat comfortable','Very comfortable','Extremely comfortable']
+  }
+];
+
+// =====================================================
+// ABOUT YOU: EATQ-R ITEMS
+// Keep the document's item IDs and presentation order.
+// =====================================================
+const ABOUT_YOU_LABELS = [
+  'Almost always untrue of you',
+  'Usually untrue of you',
+  'Sometimes true, sometimes untrue of you',
+  'Usually true of you',
+  'Almost always true of you'
+];
+
+const ABOUT_YOU_ITEMS = [
+  {
+    id: 'EATQR_7',
+    text: 'I have a hard time finishing things on time.',
+    subscale: 'Activation Control',
+    reverse: true
+  },
+  {
+    id: 'EATQR_8',
+    text: 'I feel shy with kids of the opposite sex.',
+    subscale: 'Shyness',
+    reverse: false
+  },
+  {
+    id: 'EATQR_10',
+    text: 'It’s hard for me not to open presents before I’m supposed to.',
+    subscale: 'Inhibitory Control',
+    reverse: true
+  },
+  {
+    id: 'EATQR_14',
+    text: 'When someone tells me to stop doing something, it is easy for me to stop.',
+    subscale: 'Inhibitory Control',
+    reverse: false
+  },
+  {
+    id: 'EATQR_15',
+    text: 'I feel shy about meeting new people.',
+    subscale: 'Shyness',
+    reverse: false
+  },
+  {
+    id: 'EATQR_18',
+    text: 'I do something fun for a while before starting my homework, even when I’m not supposed to.',
+    subscale: 'Activation Control',
+    reverse: true
+  },
+  {
+    id: 'EATQR_26',
+    text: 'The more I try to stop myself from doing something I shouldn’t, the more likely I am to do it.',
+    subscale: 'Inhibitory Control',
+    reverse: true
+  },
+  {
+    id: 'EATQR_30',
+    text: 'If I have a hard assignment to do, I get started right away.',
+    subscale: 'Activation Control',
+    reverse: false
+  },
+  {
+    id: 'EATQR_39',
+    text: 'I finish my homework before the due date.',
+    subscale: 'Activation Control',
+    reverse: false
+  },
+  {
+    id: 'EATQR_43',
+    text: 'It’s easy for me to keep a secret.',
+    subscale: 'Inhibitory Control',
+    reverse: false
+  },
+  {
+    id: 'EATQR_45',
+    text: 'I am shy.',
+    subscale: 'Shyness',
+    reverse: false
+  },
+  {
+    id: 'EATQR_49',
+    text: 'I put off working on projects until right before they’re due.',
+    subscale: 'Activation Control',
+    reverse: true
+  },
+  {
+    id: 'EATQR_53',
+    text: 'I am not shy.',
+    subscale: 'Shyness',
+    reverse: true
+  },
+  {
+    id: 'EATQR_63',
+    text: 'I can stick with my plans and goals.',
+    subscale: 'Inhibitory Control',
+    reverse: false
+  }
 ];
 
 // =====================================================
@@ -3165,6 +3464,101 @@ function _buildDemographicsSection(answers) {
   };
 }
 
+function buildBackgroundQuestionsPayload() {
+  const answers = state.responses.background_questions || {};
+
+  return {
+    items: BACKGROUND_QUESTIONS.map(question => {
+      const applicable = backgroundQuestionIsVisible(question, answers);
+      let answer = applicable ? answers[question.id] : null;
+
+      if (typeof answer === 'string') {
+        answer = answer.trim() || null;
+      } else if (Array.isArray(answer)) {
+        answer = answer.length ? [...answer] : null;
+      } else if (answer == null) {
+        answer = null;
+      }
+
+      const hasOther =
+        question.id === 'SCI_WHICH' &&
+        Array.isArray(answer) &&
+        answer.includes('Other');
+
+      return {
+        id: question.id,
+        document_question_number: question.document_number,
+        question: question.label,
+        instructions: question.hint || null,
+        response_type: question.type === 'text'
+          ? 'text'
+          : question.multi ? 'multiple_choice_multiple' : 'multiple_choice_single',
+        response_options: question.options || null,
+        applicable,
+        response_status: !applicable
+          ? 'not_applicable'
+          : answer === null ? 'unanswered' : 'answered',
+        participant_answer: answer,
+        other_text: hasOther
+          ? (answers.SCI_WHICH_OTHER || '').trim() || null
+          : null
+      };
+    })
+  };
+}
+
+function buildAboutYouPayload() {
+  const answers = state.responses.about_you || {};
+
+  return {
+    instrument: 'EATQ-R selected items',
+
+    administration_position:
+      'after_ground_rules_before_condition_assignment_and_framing',
+
+    completed_at_iso:
+      state.responses.about_you_completed_at || null,
+
+    condition_assigned_at_iso:
+      state.responses.condition_assigned_at || null,
+
+    response_scale: {
+      min: 1,
+      max: 5,
+      anchors: ABOUT_YOU_LABELS.map((label, index) => ({
+        value: index + 1,
+        label
+      }))
+    },
+
+    item_order: ABOUT_YOU_ITEMS.map(item => item.id),
+
+    items: ABOUT_YOU_ITEMS.map((item, index) => {
+      const stored = answers[item.id];
+
+      const rating =
+        Number.isInteger(stored) && stored >= 1 && stored <= 5
+          ? stored
+          : null;
+
+      return {
+        id: item.id,
+        statement: item.text,
+        position_shown: index + 1,
+        subscale: item.subscale,
+        reverse_coded: item.reverse,
+        participant_rating: rating,
+        anchor_label:
+          rating === null ? null : ABOUT_YOU_LABELS[rating - 1],
+        scored_rating:
+          rating === null
+            ? null
+            : item.reverse ? 6 - rating : rating
+      };
+    })
+  };
+}
+
 function buildPretestPayload() {
   const plan = state.responses.pretest;
 
@@ -3267,6 +3661,12 @@ function buildParticipantPayload() {
       consent_pdf_filename: null
     },
 
+    demographics: _buildDemographicsSection(r.demographics || {}),
+
+    background_questions: buildBackgroundQuestionsPayload(),
+
+    about_you: buildAboutYouPayload(),
+
     pre_test: buildPretestPayload(),
 
     learning_measure: {
@@ -3287,8 +3687,6 @@ function buildParticipantPayload() {
       prompt: MANIP_PROMPT,
       selected_options: r.manipulation_check || []
     },
-
-    demographics: _buildDemographicsSection(r.demographics || {}),
 
     chatbot_conversation: {
       total_messages: chatbot.length,
@@ -3980,6 +4378,87 @@ XLSX.utils.book_append_sheet(
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(demoRows)), 'Demographics');
 
+  // ---- Sheet: Additional Background Questions (column per question) ----
+  const backgroundItems = payload.background_questions?.items || [];
+
+  const backgroundRows = [[
+    'item_id',
+    'document_question_number',
+    'question',
+    'response_status',
+    'participant_answer',
+    'other_text'
+  ]];
+
+  backgroundItems.forEach(item => {
+    const answer = Array.isArray(item.participant_answer)
+      ? item.participant_answer.join('; ')
+      : item.participant_answer ?? '';
+
+    backgroundRows.push([
+      item.id,
+      item.document_question_number,
+      item.question,
+      item.response_status,
+      answer,
+      item.other_text ?? ''
+    ]);
+  });
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(transposeAoA(backgroundRows)),
+    'Background Questions'
+  );
+
+  // ---- Sheet: About You Responses (original item IDs; raw ratings) ----
+  const aboutYouItems = payload.about_you?.items || [];
+
+  const aboutYouRawRows = [
+    ['participant_id', ...aboutYouItems.map(item => item.id)],
+    [
+      payload.session?.participant_id || '',
+      ...aboutYouItems.map(item => item.participant_rating ?? '')
+    ]
+  ];
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(aboutYouRawRows),
+    'About You Responses'
+  );
+
+  // ---- Sheet: About You Item Details (wording, anchors, and scoring) ----
+  const aboutYouDetailRows = [[
+    'item_id',
+    'position_shown',
+    'statement',
+    'subscale',
+    'reverse_coded',
+    'participant_rating',
+    'anchor_label',
+    'scored_rating'
+  ]];
+
+  aboutYouItems.forEach(item => {
+    aboutYouDetailRows.push([
+      item.id,
+      item.position_shown,
+      item.statement,
+      item.subscale,
+      item.reverse_coded,
+      item.participant_rating ?? '',
+      item.anchor_label ?? '',
+      item.scored_rating ?? ''
+    ]);
+  });
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(aboutYouDetailRows),
+    'About You Item Details'
+  );
+
   // Encode as base64 for DataPipe binary upload
   const wbArr = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
   let binary = '';
@@ -4338,7 +4817,7 @@ function goTo(screenId) {
   updateProgress();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
-  if (['lesson', 'landing', 'email', 'chatbot', 'consent', 'instructions', 'framing'].includes(screenId)) { document.getElementById('main-container').classList.remove('narrow'); }
+  if (['lesson', 'landing', 'email', 'chatbot', 'consent', 'instructions', 'framing', 'about-you'].includes(screenId)) { document.getElementById('main-container').classList.remove('narrow'); }
   else { document.getElementById('main-container').classList.add('narrow'); }
 
   if (screenId === 'lesson') { startGate('lesson'); initReadProgress(); }
@@ -4368,7 +4847,11 @@ function goTo(screenId) {
   if (screenId === 'exp-chatbot') renderLikert('likert-exp-chatbot', EXP_CHATBOT_ITEMS, 'exp_chatbot');
   if (screenId === 'manipulation-check') renderManipCheck();
   if (screenId === 'si-questions') renderLikert('likert-si', SI_ITEMS, 'si');
-  if (screenId === 'demographics') renderDemographics();
+  if (screenId === 'demographics') {
+    renderDemographics();
+    renderBackgroundQuestions();
+  }
+  if (screenId === 'about-you') renderAboutYou();
   if (screenId === 'study-debrief') renderVisibleDebrief();
 }
 
@@ -5425,12 +5908,6 @@ function assignConditionAndContinue() {
   const consentValue = choice ? choice.value : null;
   if (consentValue !== 'yes') return;
 
-  ensureConditionAssignment()
-    .then(() => { recordContactEmailEarly(); })
-    .catch(err => {
-      console.warn('Condition assignment failed:', err);
-      recordContactEmailEarly();
-    });
   state.startedAt = new Date().toISOString();
 
   // Capture the consent decision into the participant's response data
@@ -5454,6 +5931,9 @@ function assignConditionAndContinue() {
   // 'complete' screen. That way they all use the same sequential
   // P00X (claimed at completion), and dropouts never consume an ID
   // or pollute the email/PDF/CSV nodes with abandoned sessions.
+
+  // Preserve early contact capture without assigning a condition yet.
+  recordContactEmailEarly();
 
   goTo('instructions');
 }
@@ -5546,7 +6026,7 @@ function renderFraming() {
     if (state.condition === 'private') {
       checkSpan.textContent = 'I have read the information above. I understand that the research team will read my chatbot conversation, but that they will not be able to identify which participant I am.';
     } else if (state.condition === 'visible') {
-      checkSpan.textContent = 'I have read the information above. I understand that the research team and my Teaching Fellow (TF) for HPL will read my chatbot conversation and will be able to identify which participant I am. They will not, however, see my answers to the final study questions.';
+      checkSpan.textContent = 'I have read the information above. I understand that the research team and my Science Instructor (SI) will read my chatbot conversation and will be able to identify which participant I am. They will not, however, see my answers to the final study questions.';
     } else {
       checkSpan.textContent = 'I have read the information above.';
     }
@@ -6242,7 +6722,256 @@ function submitDemographics() {
   if (needsDescribe) { alert('You selected "Prefer to self-describe" — please fill in the description before continuing.'); return; }
   if (!valid) { alert('Please answer all demographic questions.'); return; }
   state.responses.demographics = out;
-  goTo('lesson-debrief');
+  snapshotSession();
+  goTo('about-you');
+}
+
+// =====================================================
+// ADDITIONAL BACKGROUND QUESTIONS
+// =====================================================
+function backgroundQuestionIsVisible(question, answers) {
+  return question.id !== 'SCI_WHICH' || answers.SCI_TAKEN === 'Yes';
+}
+
+function renderBackgroundQuestions() {
+  const container = document.getElementById('background-questions-container');
+
+  state.responses.background_questions =
+    state.responses.background_questions || {};
+
+  const answers = state.responses.background_questions;
+
+  container.innerHTML = BACKGROUND_QUESTIONS
+    .filter(q => backgroundQuestionIsVisible(q, answers))
+    .map(q => {
+      const hint = q.hint
+        ? `<p class="background-hint">${escapeHtml(q.hint)}</p>`
+        : '';
+
+      let controls;
+
+      if (q.type === 'text') {
+        controls = `
+          <input
+            type="text"
+            class="background-text"
+            data-background-id="${q.id}"
+            aria-labelledby="background-label-${q.id}"
+            value="${escapeHtml(answers[q.id] || '')}"
+          />
+        `;
+      } else {
+        controls = `
+          <div class="option-list">
+            ${q.options.map(option => {
+              const selected = q.multi
+                ? (Array.isArray(answers[q.id]) &&
+                   answers[q.id].includes(option))
+                : answers[q.id] === option;
+
+              return `
+                <label class="${selected ? 'selected' : ''}">
+                  <input
+                    type="${q.multi ? 'checkbox' : 'radio'}"
+                    name="background_${q.id}"
+                    data-background-id="${q.id}"
+                    value="${escapeHtml(option)}"
+                    ${selected ? 'checked' : ''}
+                  />
+                  <span>${escapeHtml(option)}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        `;
+
+        if (
+          q.id === 'SCI_WHICH' &&
+          Array.isArray(answers.SCI_WHICH) &&
+          answers.SCI_WHICH.includes('Other')
+        ) {
+          controls += `
+            <label for="background-science-other">Other science class:</label>
+            <input
+              id="background-science-other"
+              type="text"
+              class="background-text"
+              data-background-id="SCI_WHICH_OTHER"
+              value="${escapeHtml(answers.SCI_WHICH_OTHER || '')}"
+            />
+          `;
+        }
+      }
+
+      return `
+        <fieldset class="card background-question">
+          <legend id="background-label-${q.id}">
+            ${escapeHtml(q.label)}
+          </legend>
+          ${hint}
+          ${controls}
+        </fieldset>
+      `;
+    }).join('');
+
+  // Assign handlers rather than adding duplicate listeners on each render.
+  container.onchange = event => {
+    if (event.target.matches('input[type="radio"], input[type="checkbox"]')) {
+      saveBackgroundResponse(event.target);
+    }
+  };
+
+  container.oninput = event => {
+    if (event.target.matches('input[type="text"]')) {
+      saveBackgroundResponse(event.target);
+    }
+  };
+}
+
+function saveBackgroundResponse(input) {
+  const id = input.dataset.backgroundId;
+  if (!id) return;
+
+  const answers = state.responses.background_questions;
+  let rerender = false;
+
+  if (input.type === 'checkbox') {
+    answers[id] = Array.from(
+      document.querySelectorAll(
+        `input[name="background_${id}"]:checked`
+      )
+    ).map(element => element.value);
+
+    if (id === 'SCI_WHICH' && input.value === 'Other') {
+      if (!answers.SCI_WHICH.includes('Other')) {
+        delete answers.SCI_WHICH_OTHER;
+      }
+      rerender = true;
+    }
+  } else {
+    answers[id] = input.value;
+  }
+
+  if (id === 'SCI_TAKEN') {
+    // Remove answers that no longer apply when the checklist is hidden.
+    if (answers.SCI_TAKEN !== 'Yes') {
+      delete answers.SCI_WHICH;
+      delete answers.SCI_WHICH_OTHER;
+    }
+    rerender = true;
+  }
+
+  if (rerender) {
+    renderBackgroundQuestions();
+  } else if (input.type !== 'text') {
+    document.querySelectorAll(`input[name="background_${id}"]`)
+      .forEach(element => {
+        element.closest('label')
+          .classList.toggle('selected', element.checked);
+      });
+  }
+
+  snapshotSession();
+}
+
+// =====================================================
+// ABOUT YOU: FIVE-POINT TABLE
+// =====================================================
+function renderAboutYou() {
+  state.responses.about_you = state.responses.about_you || {};
+
+  const answers = state.responses.about_you;
+
+  document.getElementById('about-you-head').innerHTML = `
+    <tr>
+      <th scope="col">Statement</th>
+      ${ABOUT_YOU_LABELS.map(label => `
+        <th scope="col">${escapeHtml(label)}</th>
+      `).join('')}
+    </tr>
+  `;
+
+  const body = document.getElementById('about-you-body');
+
+  body.innerHTML = ABOUT_YOU_ITEMS.map(item => `
+    <tr>
+      <th scope="row">${escapeHtml(item.text)}</th>
+      ${ABOUT_YOU_LABELS.map((label, index) => {
+        const value = index + 1;
+
+        return `
+          <td>
+            <label class="about-you-choice">
+              <input
+                type="radio"
+                name="about_you_${item.id}"
+                data-item-id="${item.id}"
+                value="${value}"
+                aria-label="${escapeHtml(item.text + ' — ' + label)}"
+                ${answers[item.id] === value ? 'checked' : ''}
+              />
+            </label>
+          </td>
+        `;
+      }).join('')}
+    </tr>
+  `).join('');
+
+  body.onchange = event => {
+    const input = event.target;
+    const id = input.dataset.itemId;
+
+    if (!id || !ABOUT_YOU_ITEMS.some(item => item.id === id)) return;
+
+    state.responses.about_you[id] = Number(input.value);
+    snapshotSession();
+  };
+}
+
+async function submitAboutYou() {
+  const button = document.getElementById('about-you-continue');
+  const error = document.getElementById('about-you-error');
+
+  if (button.disabled) return;
+
+  button.disabled = true;
+  button.textContent = 'Please wait…';
+  error.hidden = true;
+  error.textContent = '';
+
+  // Record completion BEFORE condition assignment.
+  // Preserve the original timestamp if the participant retries.
+  if (!state.responses.about_you_completed_at) {
+    state.responses.about_you_completed_at = new Date().toISOString();
+  }
+
+  snapshotSession();
+
+  try {
+    // Use the existing assignment method, but only after the questionnaires.
+    await ensureConditionAssignment();
+
+    if (!state.responses.condition_assigned_at) {
+      state.responses.condition_assigned_at = new Date().toISOString();
+    }
+
+    snapshotSession();
+
+    // Update the existing contact record with the assigned condition.
+    // This uses your existing helper and does not block navigation.
+    recordContactEmailEarly();
+
+    goTo('framing');
+  } catch (err) {
+    console.error('Condition assignment failed after About you:', err);
+
+    error.textContent =
+      'We could not prepare the next page. Please click Continue to try again.';
+    error.hidden = false;
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Continue';
+  }
 }
 
 // =====================================================
