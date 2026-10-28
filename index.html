@@ -1292,6 +1292,14 @@
   .modal p { margin: 0 0 24px; color: var(--ink-soft); font-size: 15px; }
   .modal .actions { justify-content: center; margin-top: 0; }
 
+  .learning-option-image {
+    display: block;
+    width: min(100%, 420px);
+    min-width: 0;
+    height: auto;
+    border-radius: 6px;
+  }
+
   /* === CRT === */
   .crt-card {
     background: var(--bg-soft);
@@ -4937,12 +4945,32 @@ multiple_choice: {
     },
     {
       id: 'q16_image', order: 16, type: 'mc',
-      prompt: 'What about something like this?',
+      prompt: 'Imagine that the Sun suddenly disappeared, so that no gravitational force from the Sun acted on Earth. At that moment, Earth is moving along its orbit. Which path would Earth follow next?',
       options: [
-        { key: 'A', text: 'add picture' },
-        { key: 'B', text: 'add picture' },
-        { key: 'C', text: 'add picture'},
-        { key: 'D', text: 'add picture'}
+        {
+          key: 'A',
+          text: 'Diagram A',
+          image: 'images/q16-a.png',
+          alt: 'Description of diagram A'
+        },
+        {
+          key: 'B',
+          text: 'Diagram B',
+          image: 'images/q16-b.png',
+          alt: 'Description of diagram B'
+        },
+        {
+          key: 'C',
+          text: 'Diagram C',
+          image: 'images/q16-c.png',
+          alt: 'Description of diagram C'
+        },
+        {
+          key: 'D',
+          text: 'Diagram D',
+          image: 'images/q16-d.png',
+          alt: 'Description of diagram D'
+        }
       ]
     }
   ]
@@ -5274,11 +5302,33 @@ function renderLearningItem() {
     const savedKey = (saved && saved.selected_key) ? saved.selected_key : null;
     const opts = item.displayOptions || item.options || [];
     mc.innerHTML = opts.map(opt => {
-      const checked = opt.key === savedKey ? ' checked' : '';
-      return `<label class="li-mc-option" style="display:block;padding:12px 14px;margin:8px 0;border:1px solid var(--rule);border-radius:8px;cursor:pointer;line-height:1.45;">`
-        + `<input type="radio" name="li-mc-radio" value="${opt.key}"${checked} style="margin-right:10px;">`
-        + `<span>${escapeHtml(opt.text)}</span></label>`;
-    }).join('');
+    const checked = opt.key === savedKey ? ' checked' : '';
+
+    const content = opt.image
+      ? `<img
+          class="learning-option-image"
+          src="${escapeHtml(opt.image)}"
+          alt="${escapeHtml(opt.alt || opt.text)}"
+        />`
+      : `<span>${escapeHtml(opt.text)}</span>`;
+
+    return `
+      <label
+        class="li-mc-option"
+        style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin:8px 0;border:1px solid var(--rule);border-radius:8px;cursor:pointer;line-height:1.45;"
+      >
+        <input
+          type="radio"
+          name="li-mc-radio"
+          value="${escapeHtml(opt.key)}"
+          ${checked}
+          style="flex-shrink:0;margin-top:4px;"
+        />
+        ${content}
+      </label>
+    `;
+  }).join('');
+    
     // Move focus into the radio group so keyboard / screen-reader users land
     // on it (the saved choice if revisiting, otherwise the first option).
     const toFocus = mc.querySelector('input[name="li-mc-radio"]:checked') || mc.querySelector('input[name="li-mc-radio"]');
