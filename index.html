@@ -6858,25 +6858,13 @@ async function submitAboutYou() {
   });
 
   if (unanswered.length > 0) {
-    error.textContent =
-      `Please answer every statement before continuing. ` +
-      `${unanswered.length} statement${unanswered.length === 1 ? '' : 's'} remaining.`;
-
-    error.hidden = false;
-
-    const firstUnanswered = document.querySelector(
-      `input[name="about_you_${unanswered[0].id}"]`
+    alert(
+      'Please answer every statement before continuing. ' +
+      unanswered.length +
+      ' statement' +
+      (unanswered.length === 1 ? ' remains' : 's remain') +
+      ' unanswered.'
     );
-
-    if (firstUnanswered) {
-      firstUnanswered.focus({ preventScroll: true });
-      firstUnanswered.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-        inline: 'nearest'
-      });
-    }
-
     return;
   }
 
