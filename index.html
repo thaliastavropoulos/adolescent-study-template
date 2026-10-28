@@ -4867,14 +4867,14 @@ const LEARNING_ITEMS_RAW = {
   sectionLabel: 'Learning measure · Written response',
   maxWords: 60, 
   items: [
-    { id: 'q05_velocity', order: 5, prompt: 'Define velocity.' },
-    { id: 'q08_impetus', order: 8, prompt: 'According to the impetus view, what happens to the source of motion inside an object over time?' },
-    { id: 'q10_newtonian', order: 10, prompt: 'Why does the Newtonian explanation say that no force is needed to keep an object moving at constant velocity?' },
-    { id: 'q11_friction', order: 11, prompt: 'Why does reducing friction make it easier to distinguish between the impetus and Newtonian explanations?' },
-    { id: 'q12_convincing', order: 12, prompt: 'Why can the impetus idea feel convincing to people even when it is not the correct scientific explanation?' },
-    { id: 'q13_cart', order: 13, prompt: 'Imagine you push an empty shopping cart hard across a flat parking lot and let go, and it gradually slows down and stops. The next day, you push the same cart with the same force across a smooth floor indoors, and it travels much farther before stopping. Which explanation, impetus or Newtonian, better fits observations, and why?' },
-    { id: 'q14_passenger', order: 14, prompt: 'A passenger is sitting in a car that suddenly brakes hard. Their body lurches forward even though nothing pushes them. Use Newton\'s First Law to explain why this happens.' },
-    { id: 'q15_magician', order: 15, prompt: 'A magician yanks a tablecloth out from under a set of dishes, and the dishes barely move. Use Newton\'s First Law to explain why the dishes stay roughly in place.' }
+    { id: 'q05_velocity', prompt: 'Define velocity.' },
+    { id: 'q08_impetus', prompt: 'According to the impetus view, what happens to the source of motion inside an object over time?' },
+    { id: 'q10_newtonian', prompt: 'Why does the Newtonian explanation say that no force is needed to keep an object moving at constant velocity?' },
+    { id: 'q11_friction', prompt: 'Why does reducing friction make it easier to distinguish between the impetus and Newtonian explanations?' },
+    { id: 'q12_convincing', prompt: 'Why can the impetus idea feel convincing to people even when it is not the correct scientific explanation?' },
+    { id: 'q13_cart', prompt: 'Imagine you push an empty shopping cart hard across a flat parking lot and let go, and it gradually slows down and stops. The next day, you push the same cart with the same force across a smooth floor indoors, and it travels much farther before stopping. Which explanation, impetus or Newtonian, better fits observations, and why?' },
+    { id: 'q14_passenger', prompt: 'A passenger is sitting in a car that suddenly brakes hard. Their body lurches forward even though nothing pushes them. Use Newton\'s First Law to explain why this happens.' },
+    { id: 'q15_magician', prompt: 'A magician yanks a tablecloth out from under a set of dishes, and the dishes barely move. Use Newton\'s First Law to explain why the dishes stay roughly in place.' }
   ]
 },
 multiple_choice: {
@@ -4882,7 +4882,7 @@ multiple_choice: {
   maxWords: 60,
   items: [
     {
-      id: 'q01_train_ball', order: 1, type: 'mc',
+      id: 'q01_train_ball', type: 'mc',
       prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the train, a fixed mechanical claw holds a ball halfway along the ceiling between the front and rear of the car. The ball is released. Ignore air resistance; there is no wind inside the car. Where will the ball fall?',
       options: [
         { key: 'A', text: 'Behind the halfway point of the car floor' },
@@ -4890,7 +4890,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q02_hovercraft_east', order: 2, type: 'mc',
+      id: 'q02_hovercraft_east', type: 'mc',
       prompt: 'A hovercraft is moving from east toward west at a constant velocity of 70 MPH in a straight line. The water surface is perfectly smooth, the hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a painting hung on the north wall, 20 ft above the floor level. At one point, the nail gets loose and the painting falls freely without touching the wall. Please ignore air resistance. There is no wind inside the cabin. The painting will fall:',
       options: [
         { key: 'A', text: 'Directly below the place it was hung' },
@@ -4898,7 +4898,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q03_cannonball', order: 3, type: 'mc',
+      id: 'q03_cannonball', type: 'mc',
       prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the cabin, there is a compressed spring on the floor of the car, located half way along the front and the rear ends of the cabin. There is a cannonball resting on top of the spring. At one point, the spring is released, and the cannonball is shot upward in a perfect straight trajectory. The cannonball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The cannonball will fall:',
       options: [
         { key: 'A', text: 'Behind the halfway point of the car floor' },
@@ -4906,7 +4906,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q04_hovercraft_straight', order: 4, type: 'mc',
+      id: 'q04_hovercraft_straight', type: 'mc',
       prompt: 'A hovercraft is moving at a constant velocity of 70 MPH in a straight line. The hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a compressed spring on the floor of the craft, located half way along the front and the rear ends of the cabin. There is a ball resting on top of the spring. At one point, the spring is released, and the ball is shot upward in a perfect straight trajectory. The ball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The ball\'s downward trajectory will be:',
       options: [
         { key: 'A', text: 'Perfectly straight' },
@@ -4914,7 +4914,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q06_first_law', order: 6, type: 'mc',
+      id: 'q06_first_law', type: 'mc',
       prompt: 'What does Newton\'s First Law state',
       options: [
         { key: 'A', text: 'The acceleration of an object is equal to the net force acting on it divided by its mass' },
@@ -4924,7 +4924,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q07_net_force', order: 7, type: 'mc',
+      id: 'q07_net_force', type: 'mc',
       prompt: 'What is meant by net force?',
       options: [
         { key: 'A', text: ' The single strongest force pushing or pulling on the object' },
@@ -4934,7 +4934,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q09_book', order: 9, type: 'mc',
+      id: 'q09_book', type: 'mc',
       prompt: 'According to the Newtonian explanation, why does a book pushed across a table slow down and come to rest?',
       options: [
         { key: 'A', text: ' The push the book received gradually wears off, and once it is gone the book has nothing left to keep it moving' },
@@ -4944,7 +4944,7 @@ multiple_choice: {
       ]
     },
     {
-      id: 'q16_image', order: 16, type: 'mc',
+      id: 'q16_image', type: 'mc',
       prompt: 'Imagine that the Sun suddenly disappeared, so that no gravitational force from the Sun acted on Earth. At that moment, Earth is moving along its orbit. Which path would Earth follow next?',
       options: [
         {
