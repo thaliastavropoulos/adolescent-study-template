@@ -116,7 +116,7 @@ async function handleAction(body) {
 
     case 'appendSemanticCache': {
       const entry = normalizeCacheEntry(body.entry);
-      await db.ref('semantic_cache').push(entry);
+      await db.ref('semantic_cache_adolescent_motion_v1').push(entry);
       return { ok: true };
     }
 

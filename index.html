@@ -2455,7 +2455,7 @@ const DEMO_QUESTIONS = [
 // ============================================================
 // CURATED REPOSITORY ROUTER (embedding + GPT-routed semantic match)
 // ------------------------------------------------------------
-// The in-code CHATBOT_FAQ below is the source of truth: 55 researcher
+// The in-code CHATBOT_FAQ below is the source of truth: 26 researcher
 // vetted Q&A pairs. At chatbot-screen open we pre-compute one embedding
 // per trigger phrase (one network call, batched). For every participant
 // question we:
@@ -2525,53 +2525,232 @@ async function precomputeCuratedRepoEmbeddings() {
 // listed trigger, bypassing OpenAI. Each entry has triggers (phrases
 // participants might use) and an answer (verbatim canonical text).
 const CHATBOT_FAQ = [
-  // === Concept definitions ===
+  // === Factual questions ===
   {
-    id: 'thought_experiment_def',
-    triggers: ['thought experiment','what is a thought experiment','define thought experiment','explain thought experiment','what are thought experiments','thought experiment definition'],
-    answer: "A thought experiment asks the child to picture a specific situation in their mind and then carefully reason through what their own explanation says should happen in it. The important thing is that no new facts arrive from the outside world; the child is only unfolding what they already believe. Its value comes from a kind of self-checking. By forcing the child to spell out what their explanation actually predicts, it can expose a contradiction that was sitting there unnoticed. So a thought experiment does not teach the child something new about the world so much as it helps the child see whether the ideas they already hold actually fit together. Do you have another question about the lesson?"
-  },
-  {
-    id: 'naive_theory_def',
-    triggers: ['naive theory','naïve theory','what is a naive theory','define naive theory','explain naive theory','intuitive theory','folk theory','what are naive theories'],
-    answer: "A naïve theory is an everyday, intuitive explanation that a child already has before anyone formally teaches them. The lesson stresses that children are not blank slates when they get to school; they show up already having their own working ideas about how the world behaves, and they use those ideas to predict what will happen and to make sense of causes. The tricky part is that these homemade ideas are often incomplete, inaccurate, or even self-contradicting. They are also surprisingly stubborn, which is the part people find confusing, because a child can run into clear evidence that an idea is wrong and still keep believing it anyway. Do you have another question about the lesson?"
-  },
-  {
-    id: 'conceptual_change_def',
-    triggers: ['conceptual change','what is conceptual change','define conceptual change','explain conceptual change','conceptual change definition'],
-    answer: "Conceptual change is the term cognitive scientists use for the hard kind of learning, where instead of simply adding new facts to what a child already knows, the child has to reorganize the whole intuitive framework they were using to understand something. As the field describes it, this kind of development involves not just elaboration of existing knowledge but its considerable reorganization or restructuring. It is \"radical\" because the old way of thinking and the correct one are organized so differently that the new ideas cannot simply be folded neatly into the old structure. Do you have another question about the lesson?"
-  },
-  {
-    id: 'enrichment_def',
-    triggers: ['enrichment','what is enrichment','define enrichment','explain enrichment','enrichment definition','what does enrichment mean','enrichment learning'],
-    answer: "Enrichment is a kind of learning where you add new information on top of what you already understand, without having to overhaul your existing explanation. The new facts fit into the framework you already have, so your underlying way of thinking about the topic stays intact and simply becomes more detailed. In short, your knowledge expands rather than getting rebuilt. Do you have another question about the lesson?"
-  },
-  {
-    id: 'belief_weight_def',
-    triggers: ['belief weight','degrees of belief','what is belief weight','what are degrees of belief','explain belief weight','adjusting degrees of belief'],
-    answer: "This is the lesson's idea about what actually happens when a child changes their mind, and on its own it says this: a child usually does not commit to a single explanation. Instead the child holds several competing explanations at the same time and trusts each one to a different degree, as if giving each idea its own amount of confidence. On this view, revising a belief does not mean getting rid of any explanation. It means adjusting how much confidence the child gives to each one as new evidence arrives, so the explanation that fits the evidence becomes more trusted while the others lose some trust but are still kept around. The thing to take away is that, on this account, the old explanation never disappears; it just becomes less believed. Do you have another question about the lesson?"
-  },
-  {
-    id: 'conceptual_replacement_def',
-    triggers: ['conceptual replacement','what is conceptual replacement','define conceptual replacement','explain conceptual replacement','replacement explanation','overwrite','overwrites','overwriting','what does overwrite mean','what does it mean to overwrite','overwrite explanation','overwrites the weaker explanation','overwrites the explanation','evidence overwrites','evidence overwrites the weaker explanation','overwrite weaker explanation'],
-    answer: "This is another idea about what happens when a child revises beliefs: the explanation that best fits the evidence completely overwrites the weaker one, so that the weaker explanation is no longer available to the child at all. The simplest way to hold onto this is that conceptual replacement treats the losing explanation as erased and gone, rather than just trusted less. Do you have another question about the lesson?"
-  },
-  {
-    id: 'internally_inconsistent',
+    id: 'newtons_first_law',
     triggers: [
-      'internally inconsistent',
-      'what does internally inconsistent mean',
-      'what is internal inconsistency',
-      'explain internal inconsistency',
-      'internal inconsistency',
-      'contradictory beliefs in a child',
-      'inconsistent beliefs',
-      'two beliefs that conflict',
-      'beliefs that contradict each other',
-      'what makes a belief internally inconsistent',
-      'what does it mean for beliefs to be internally inconsistent'
+      "Newton's First Law",
+      "what does Newton's First Law say",
+      "what is Newton's First Law",
+      "explain Newton's First Law",
+      'first law of motion',
+      "Newton's First Law definition"
     ],
-    answer: "Internally inconsistent means two of the child's own beliefs cannot both be true at once because they make conflicting predictions about the same situation. The lesson's clean case is the rolling ball: an impetus belief says the ball will slow and stop, while a Newtonian belief says it will keep moving, and a single ball cannot both stop and keep going. The inconsistency is \"internal\" because it is a clash between the child's own ideas, not a clash between an idea and an outside observation. Do you have another question about the lesson?"
+    answer: "An object stays at rest or continues moving at constant velocity unless a net force acts on it. In this lesson, that means an object’s velocity remains constant when the net force is zero. Do you have another question about the lesson?"
+  },
+  {
+    id: 'impetus_view',
+    triggers: [
+      'impetus view',
+      'impetus',
+      'what is the impetus view',
+      'define impetus',
+      'explain impetus',
+      'impetus explanation',
+      'internal source of motion'
+    ],
+    answer: "The impetus view says that starting an object moving gives it an internal source of motion. That source sustains the motion but gradually dissipates, so the object eventually stops. Do you have another question about the lesson?"
+  },
+  {
+    id: 'newtonian_view',
+    triggers: [
+      'Newtonian view',
+      'what is the Newtonian view',
+      'explain the Newtonian view',
+      'Newtonian explanation',
+      'Newtonian account of motion',
+      'Newtonian mechanics'
+    ],
+    answer: "The Newtonian view says that changes in motion require explanation, while continued motion at constant velocity does not require a force. A net external force changes an object’s velocity. Do you have another question about the lesson?"
+  },
+  {
+    id: 'causal_explanation',
+    triggers: [
+      'causal explanation',
+      'what does causal explanation mean',
+      'define causal explanation',
+      'explain causal explanation',
+      'causal explanation definition',
+      'requiring a causal explanation'
+    ],
+    answer: "It means an explanation of what causes something to happen. The two views differ over whether continued motion needs a cause or whether changes in motion need one. Do you have another question about the lesson?"
+  },
+  {
+    id: 'initiating_motion',
+    triggers: [
+      'initiating motion',
+      'what does initiating motion mean',
+      'define initiating motion',
+      'explain initiating motion',
+      'starting an object moving',
+      'initiate motion'
+    ],
+    answer: "It means starting an object moving. According to the impetus view, initiating motion gives the object an internal impetus. Do you have another question about the lesson?"
+  },
+  {
+    id: 'sustaining_motion',
+    triggers: [
+      'sustains motion',
+      'sustain motion',
+      'what does sustain mean',
+      'what does it mean for impetus to sustain motion',
+      'impetus keeps an object moving',
+      'how impetus maintains motion'
+    ],
+    answer: "In the impetus view, the impetus keeps an object moving after it has been set in motion. The view says the object stops when that impetus is exhausted. Do you have another question about the lesson?"
+  },
+  {
+    id: 'dissipation',
+    triggers: [
+      'dissipates',
+      'dissipate',
+      'dissipation',
+      'what does dissipates mean',
+      'define dissipate',
+      'impetus dissipates over time',
+      'impetus gradually disappears'
+    ],
+    answer: "It means gradually decreases or disappears. In the impetus view, an object’s internal impetus dissipates over time. Do you have another question about the lesson?"
+  },
+  {
+    id: 'velocity',
+    triggers: [
+      'velocity',
+      'what is velocity',
+      'define velocity',
+      'explain velocity',
+      'velocity definition',
+      'what does velocity mean',
+      'speed and direction'
+    ],
+    answer: "Velocity describes how fast an object is moving and in what direction. The lesson says an object’s velocity stays constant when the net force on it is zero. Do you have another question about the lesson?"
+  },
+  {
+    id: 'net_force',
+    triggers: [
+      'net force',
+      'what is net force',
+      'define net force',
+      'explain net force',
+      'net force definition',
+      'combined effect of forces',
+      'overall force'
+    ],
+    answer: "Net force is the combined effect of the forces acting on an object. The lesson says a net force changes an object’s velocity. Do you have another question about the lesson?"
+  },
+  {
+    id: 'net_external_force',
+    triggers: [
+      'net external force',
+      'what is a net external force',
+      'define net external force',
+      'explain net external force',
+      'external forces',
+      'forces from outside the object'
+    ],
+    answer: "It is the combined force on an object from things outside it. In the Newtonian view, inertial motion persists when there is no net external force. Do you have another question about the lesson?"
+  },
+  {
+    id: 'inertia',
+    triggers: [
+      'inertia',
+      'what is inertia',
+      'define inertia',
+      'explain inertia',
+      'inertia definition',
+      'what does inertia mean',
+      'tendency to keep moving'
+    ],
+    answer: "Inertia is an object’s tendency to keep its current state of motion unless a net force acts on it. That state can be rest or motion at constant velocity. Do you have another question about the lesson?"
+  },
+  {
+    id: 'inertial_motion',
+    triggers: [
+      'inertial motion',
+      'what is inertial motion',
+      'define inertial motion',
+      'explain inertial motion',
+      'inertial motion definition',
+      'inertial motion persists'
+    ],
+    answer: "Inertial motion is motion that continues at constant velocity when no net external force acts on the object. Its speed and direction remain unchanged. Do you have another question about the lesson?"
+  },
+  {
+    id: 'uniform_motion',
+    triggers: [
+      'uniform motion',
+      'what is uniform motion',
+      'define uniform motion',
+      'explain uniform motion',
+      'constant velocity',
+      'persistent uniform motion',
+      'same speed and direction'
+    ],
+    answer: "Uniform motion means moving at a constant velocity: the same speed in the same direction. The lesson says this motion persists when the net force is zero. Do you have another question about the lesson?"
+  },
+  {
+    id: 'dynamically_equivalent',
+    triggers: [
+      'dynamically equivalent',
+      'what does dynamically equivalent mean',
+      'define dynamically equivalent',
+      'dynamically equivalent states',
+      'rest and uniform motion',
+      'rest and motion are equivalent',
+      'how are rest and uniform motion alike'
+    ],
+    answer: "It means that two states follow the same rule about motion. In this lesson, rest and uniform motion are equivalent because neither requires a net force to continue. Do you have another question about the lesson?"
+  },
+  {
+    id: 'friction',
+    triggers: [
+      'friction',
+      'what is friction',
+      'define friction',
+      'explain friction',
+      'friction definition',
+      'friction between surfaces',
+      'friction between the book and table'
+    ],
+    answer: "Friction is a force between surfaces that resists their motion against one another. The lesson uses friction between a book and a table to explain why the book slows down. Do you have another question about the lesson?"
+  },
+  {
+    id: 'resistive_forces',
+    triggers: [
+      'resistive forces',
+      'resistive force',
+      'what are resistive forces',
+      'define resistive force',
+      'explain resistive forces',
+      'forces that oppose motion',
+      'forces acting against motion'
+    ],
+    answer: "Resistive forces act against motion. The lesson says ordinary motion usually happens in the presence of resistive forces. Do you have another question about the lesson?"
+  },
+  {
+    id: 'friction_approaches_zero',
+    triggers: [
+      'friction approaches zero',
+      'what does friction approaches zero mean',
+      'explain friction approaching zero',
+      'very low friction',
+      'almost no friction',
+      'friction becomes smaller'
+    ],
+    answer: "It means the friction opposing motion becomes smaller and smaller. The lesson considers how the two views predict motion when friction is very low. Do you have another question about the lesson?"
+  },
+  {
+    id: 'predictions_diverge',
+    triggers: [
+      'predictions diverge',
+      'diverge',
+      'what does diverge mean',
+      'diverging predictions',
+      'how do the predictions differ',
+      'what do the two views predict',
+      'continued motion versus stopping'
+    ],
+    answer: "It means their predictions become different. As friction approaches zero, the Newtonian view predicts continued uniform motion, while the impetus view predicts eventual stopping. Do you have another question about the lesson?"
   },
   {
     id: 'future_questions',
@@ -2592,279 +2771,98 @@ const CHATBOT_FAQ = [
       'how will i be graded',
       'what are the next steps'
     ],
-    answer: "I don't have information about what you'll be asked later in the study. I can help you prepare by reviewing the key ideas from the lesson, for example what thought experiments are, how they support consistency monitoring, what conceptual change is, or how redistribution differs from conceptual replacement. Do you have another question about the lesson?"
-  },
-  {
-    id: 'consistency_monitoring_def',
-    triggers: ['consistency monitoring','what is consistency monitoring','define consistency monitoring','explain consistency monitoring','consistency monitoring definition','notice inconsistencies'],
-    answer: "Consistency monitoring is noticing that two beliefs you hold cannot both be true because they lead to contradictory predictions about the same situation. In the research it is studied as the ability to explicitly notice inconsistencies among one's own beliefs, and it is treated as a form of self-checking that can drive learning even when no new outside evidence is provided. Studies have linked this ability to deeper understanding, finding that noticing such inconsistencies is associated with more mature understanding. Do you have another question about the lesson?"
+    answer: "I don't have information about what you'll be asked later in the study. I can help you prepare by reviewing the key ideas from the lesson, for example what velocity, net force, inertia, the impetus view, or the Newtonian view are. Do you have another question about the lesson?"
   },
 
-  // === Critical: the deliberate contradiction in the lesson ===
+  // === Causal questions ===
   {
-    id: 'redistribute_vs_replace',
-    triggers: ['both redistribute and replace','redistribute and replace','how do those fit','can both happen','degrees of belief vs replacement','two views of revision','contradiction in lesson','keep and erase','kept and erased'],
-    answer: "Good question, because the two ideas do not really fit together: redistributing means the child keeps the weaker explanation but trusts it less, while replacing means the weaker explanation is wiped out completely. You cannot both keep something and delete it at the same time. What most researchers think is that the old idea usually is not erased at all. Instead, the new scientific idea tends to coexist with the old one rather than replace it. This fits the fact that old beliefs are stubborn: childhood misconceptions stick around for life and have to be held back rather than erased, which is why even smart adults sometimes slip back into them. That said, this debate is not fully settled, because some research does describe genuine cases where children show abrupt conceptual transitions, replacing intuitive knowledge with scientific theories. So the clearest answer is that redistributing is probably what happens. Do you have another question about the lesson?"
-  },
-
-  // === Thought experiments ===
-  {
-    id: 'thought_exp_vs_real_exp',
-    triggers: ['thought experiment vs real experiment','difference between thought experiment and real','how thought experiment differ from real','thought experiment versus real','real experiment vs thought'],
-    answer: "A thought experiment asks you to imagine a situation and reason through what your own explanation predicts, whereas a real experiment gathers fresh data by acting on the actual world. Do you have another question about the lesson?"
-  },
-  {
-    id: 'thought_exp_vs_imagining',
-    triggers: ['thought experiment vs imagining','difference between thought experiment and imagining','thought experiment versus simply imagining','just imagining'],
-    answer: "Plain imagining is free and open-ended, while a thought experiment is disciplined: you hold a premise fixed and follow out what your explanation must predict if it were true. That structure is what surfaces a hidden contradiction, which idle daydreaming would not. In the research, thought experiments are treated as a form of inferential reasoning rather than mere fantasy. Do you have another question about the lesson?"
+    id: 'book_slows_newtonian',
+    triggers: [
+      'why the book slows down in the Newtonian view',
+      'why does the book stop',
+      'why does a book pushed across a table slow down',
+      'Newtonian explanation of the book stopping',
+      'friction slows the book',
+      'how friction changes the book velocity'
+    ],
+    answer: "Friction between the book and the table produces a net force. That force changes the book’s velocity, causing it to slow down. Do you have another question about the lesson?"
   },
   {
-    id: 'thought_exp_vs_visualization',
-    triggers: ['thought experiment similar to visualization','thought experiment vs visualization','are thought experiments visualizations','visualization vs thought experiment'],
-    answer: "They overlap, because both use mental imagery, but they are not the same. A visualization mainly pictures something, whereas a thought experiment uses an imagined simulation to test an idea and draw a conclusion from it. Researchers describe this as imagistic simulation doing reasoning work, so the picturing is in service of inference, not the goal itself. Do you have another question about the lesson?"
+    id: 'book_slows_impetus',
+    triggers: [
+      'why the book slows down in the impetus view',
+      'impetus explanation of the book stopping',
+      'why does the book stop according to impetus',
+      'book runs out of impetus',
+      'internal push wears off',
+      'impetus dissipates and the book stops'
+    ],
+    answer: "The impetus view says the push gives the book an internal source of motion. As that source dissipates, the book slows and eventually stops. Do you have another question about the lesson?"
   },
   {
-    id: 'thought_exp_stories_or_handson',
-    triggers: ['thought experiments through stories','hands on activities','thought experiment story','thought experiment hands on','do they involve hands on'],
-    answer: "Strictly speaking, neither is required, because the defining feature is mental simulation rather than physical materials or narrative. In practice researchers often present a concrete scenario for the child to simulate in their head, like picturing a single grain of rice landing on a card balanced on a fulcrum, without the child ever touching it. So a story-like setup can help frame it, but the actual work happens in the child's mind. Do you have another question about the lesson?"
+    id: 'book_explanations_compared',
+    triggers: [
+      'why the two views explain the book differently',
+      'compare the two explanations of the book',
+      'impetus versus Newtonian book explanation',
+      'different causes of the book stopping',
+      'impetus running out versus friction',
+      'how both views explain the same event'
+    ],
+    answer: "They offer different causes for the book’s stopping. The impetus view says its internal impetus runs out, while the Newtonian view says friction produces a net force that changes its velocity. Do you have another question about the lesson?"
   },
   {
-    id: 'thought_exp_process',
-    triggers: ['process of a thought experiment','child describing thinking','back and forth questioning','how thought experiment works process','who does the reasoning'],
-    answer: "It is usually guided back-and-forth, where an adult poses the situation and asks the child to trace what would happen, but the reasoning has to come from the child. In the lesson's terms, the adult sets up the rolling ball and asks the child to simulate it and say what each explanation predicts. The dialogue provides the scaffolding, while the child supplies the actual prediction and notices the clash. Do you have another question about the lesson?"
+    id: 'motion_without_net_force',
+    triggers: [
+      'why motion continues without a net force',
+      'why is no force needed to keep moving',
+      'does constant velocity require a force',
+      'force changes motion rather than maintaining it',
+      'why does an object keep moving',
+      'motion with zero net force'
+    ],
+    answer: "In the Newtonian view, a net force is needed to change velocity, not to maintain it. With no net force changing the velocity, the object continues at the same speed and in the same direction. Do you have another question about the lesson?"
   },
   {
-    id: 'thought_exp_example',
-    triggers: ['example of a thought experiment','example child imagining','can you give an example','give an example','example of imagining'],
-    answer: "A nice research example involves weight: many young children insist a single grain of rice weighs nothing at all, so a child is asked to imagine that grain placed on a card resting on a fulcrum and to predict what happens. Reasoning through it, the child sees that if the grain truly had zero weight the card could never tip, which conflicts with their sense that it might. In the study, children at the start took weight to be an accidental property and claimed small pieces weigh \"nothing at all,\" a misconception the simulation was designed to challenge. Do you have another question about the lesson?"
+    id: 'low_friction_different_predictions',
+    triggers: [
+      'why reducing friction makes the predictions different',
+      'why do the views differ when friction approaches zero',
+      'why low friction distinguishes the two views',
+      'reducing friction and impetus',
+      'why does Newtonian motion continue with less friction',
+      'why impetus still predicts stopping without friction'
+    ],
+    answer: "The Newtonian view attributes the book’s slowing to friction, so reducing friction reduces the force changing its velocity. The impetus view predicts that the internal impetus will still dissipate, eventually ending the motion. Do you have another question about the lesson?"
   },
   {
-    id: 'thought_exp_why_help_revision',
-    triggers: ['why thought experiments help revise beliefs','why thought experiments help','how thought experiments help revision','why help belief revision','why thought experiments work'],
-    answer: "Because they make you confront what your own ideas actually predict, which can expose an error you were carrying without realizing it. Research frames them as a tool that can reveal errors and trigger belief revision in the service of error correction. They work less by teaching you something new and more by showing you that two of your beliefs cannot both be right. Do you have another question about the lesson?"
+    id: 'impetus_intuitively_plausible',
+    triggers: [
+      'why impetus seems plausible',
+      'why does the impetus view feel convincing',
+      'why do people believe in impetus',
+      'impetus and everyday experience',
+      'why motion seems to fade away',
+      'why impetus feels intuitive',
+      'objects usually slow down and stop'
+    ],
+    answer: "In everyday life, moving objects often slow down and stop. Because resistive forces are usually present, it may seem as though motion itself is fading away. Do you have another question about the lesson?"
   },
   {
-    id: 'thought_exp_vs_direct_evidence',
-    triggers: ['why thought experiment reveal contradictions direct evidence does not','direct evidence does not','thought experiment vs direct evidence','why not direct evidence','reveal contradictions evidence does not'],
-    answer: "Because the conflict it exposes is between your own beliefs, so you cannot dismiss it the way you might dismiss a surprising observation as a fluke or special case. Researchers point out that the relevant clash is often between an implicit assumption and an explicit belief, and the thought experiment's job is to make the implicit one explicit so the two can finally be compared side by side. Direct evidence can be explained away, but a contradiction in your own commitments is harder to ignore, which is exactly why naïve theories can survive refuting evidence yet crack under a thought experiment. Do you have another question about the lesson?"
-  },
-  {
-    id: 'thought_exp_can_backfire',
-    triggers: ['control a thought experiment','poorly run thought experiment','backfire','reinforce incorrect belief','can thought experiment go wrong','poorly designed'],
-    answer: "You control it by choosing a scenario that forces the two competing predictions into direct contact and by guiding the child to actually trace the consequences rather than just restating their hunch. And yes, a poorly designed one can backfire: if the imagined setup quietly fits the naïve theory, or the child resolves the tension by explaining it away, the wrong belief can be strengthened instead of challenged. This is why the framing matters so much, since the same tool that detects an error can entrench one if it never brings the real contradiction into view. Do you have another question about the lesson?"
-  },
-  {
-    id: 'new_perspective_as_info',
-    triggers: ['new perspective count as new information','reveal inconsistencies not add information','new perspective as information','add new information','perspective new info'],
-    answer: "It depends on what you mean by \"information,\" and the research treats this as genuinely open rather than settled. The lesson is using \"information\" to mean facts arriving from outside, so in that narrow sense a new perspective is not new information; it is a new way of organizing facts you already had. Do you have another question about the lesson?"
-  },
-  {
-    id: 'info_vs_insight',
-    triggers: ['not adding new information mean no new insight','information vs insight','value comes from checking consistency','no new insight generated','insight or information'],
-    answer: "The lesson leans toward the second reading: the value is in checking whether your existing beliefs hold together. This matches the \"conceptual confusion\" account, where a thought experiment provides the information that your current knowledge leads to contradictions and identifies areas of understanding that require conceptual change. But notice that even \"you contradict yourself\" is arguably a new insight, so the honest answer is that the lesson is highlighting consistency-checking without claiming literally nothing new is ever produced. Do you have another question about the lesson?"
-  },
-
-  // === Naïve theories ===
-  {
-    id: 'naive_theories_dev',
-    triggers: ['how do naive theories develop','what are naive theories how do they develop','where do naive theories come from','naive theory development','how naive theories form'],
-    answer: "Naïve theories are the intuitive, homemade explanations children build before any formal instruction, which they use to predict events and figure out what causes what. The research describes them as developing from a mix of sources: they are built by children from a combination of inputs, including innate biases, firsthand experience, and cultural teachings, and they play the same role as scientific theories in helping us explain, predict, and intervene on events. So they grow out of everyday interaction with the world rather than being taught. Do you have another question about the lesson?"
-  },
-  {
-    id: 'parents_main_source',
-    triggers: ['biggest contributor to forming naive theories','parents main source','parents and caregivers naive theories','who shapes naive theories','where naive theories come from most'],
-    answer: "Caregivers matter, but they are only one of three contributors, and usually not the dominant one for physical concepts. Naïve theories come from innate biases, firsthand experience, and cultural teachings together, and for something like motion, a child's own repeated handling of objects tends to do more of the work than anything a parent says. Culture and caregivers matter more in domains like biology or social behavior, where direct experience is thinner. Do you have another question about the lesson?"
-  },
-  {
-    id: 'impetus_explanation',
-    triggers: ['what is an impetus based explanation','impetus','impetus theory','inner push','impetus explanation','what is impetus'],
-    answer: "It is the intuitive idea that a moving object carries an inner push or \"force\" inside it that gradually runs out, so the object slows and stops on its own. The research notes this closely resembles pre-Newtonian physics, since intuitive judgments about motion resemble the medieval impetus theories proposed by thinkers such as Buridan. In the lesson, this is the naïve rival to the Newtonian view, and for the rolling ball it predicts the ball will stop by itself. Do you have another question about the lesson?"
-  },
-  {
-    id: 'why_naive_theories_persist',
-    triggers: ['why do naive theories persist','why internally inconsistent persist','persist when meet evidence','naive theories stubborn','why hard to change naive theories','evidence does not refute'],
-    answer: "Because a naïve theory shapes how a child interprets evidence in the first place, so a contradicting observation often gets explained away or simply not noticed as relevant. Some misconceptions are also propped up by perception itself; researchers argue children keep the straight-down belief partly because they cannot easily learn it is wrong from experience, since the moving object really does look like it falls straight down relative to the carrier. So the very evidence that should refute the theory can appear to confirm it. Do you have another question about the lesson?"
-  },
-  {
-    id: 'internally_inconsistent',
-    triggers: ['what does internally inconsistent mean','internally inconsistent','define internally inconsistent','what is internal inconsistency'],
-    answer: "It means two of the child's own beliefs cannot both be true at once because they imply different things about the same situation. The lesson's rolling ball is the clean case: the impetus belief says it stops while the Newtonian belief says it keeps going, and a single object cannot both stop and keep going. The inconsistency is internal because the clash is between the child's own ideas, not between an idea and the outside world. Do you have another question about the lesson?"
-  },
-  {
-    id: 'naive_theories_learning_challenge',
-    triggers: ['incorrect naive theories make learning challenging','make learning hard','why naive theories block learning','how incorrect theories affect learning','learning challenge naive theories'],
-    answer: "They make learning harder because new instruction does not land on a blank slate; it has to compete with a confident existing explanation that the child keeps using. When the correct idea conflicts with the naïve one, the child often distorts or ignores the new material to fit what they already believe, so learning requires dismantling the old structure rather than just adding to it. Do you have another question about the lesson?"
-  },
-  {
-    id: 'consequences_inaccurate_beliefs',
-    triggers: ['consequences if children keep inaccurate beliefs','what happens if hold incorrect beliefs','consequences inaccurate beliefs','wrong beliefs consequences','keeping wrong beliefs'],
-    answer: "The main consequence is that the misconception quietly persists underneath later instruction and resurfaces in new or pressured situations, even after a child can recite the correct answer. The literature shows this vividly: students who \"know\" all objects fall at the same rate will revert to the gut-level belief that heavier objects fall faster when asked about an unfamiliar situation they have not rehearsed. So an unaddressed naïve theory does not disappear; it becomes a latent error that undermines reasoning later on. Do you have another question about the lesson?"
-  },
-  {
-    id: 'naive_theories_strength',
-    triggers: ['naive theories as strength','naive theories strength','strength rather than barrier','naive theory good','helpful naive theory','viewed positively'],
-    answer: "Yes, in an important sense they are a strength, because they show the child is already an active theory-builder trying to explain the world, which is the same engine that drives real scientific reasoning. For that potential to pay off, a thought experiment would need to use the child's existing theory as raw material, drawing out its own predictions until the child notices the tension themselves, rather than just declaring the theory wrong. Used that way, the naïve theory becomes the starting point for genuine reasoning and revision, not merely an obstacle to clear away. Do you have another question about the lesson?"
-  },
-  {
-    id: 'adults_naive_theories',
-    triggers: ['adults hold naive theories','do adults have naive theories','adult naive theories','adults vs children naive','differ from children'],
-    answer: "Yes, adults hold them too, and often the very same ones. Research finds that even childhood misconceptions persist across the lifespan and must be inhibited when reasoning, which is why educated adults can still slip into impetus-style answers. The main difference is not that adults lose the naïve theory but that they layer a correct scientific theory on top and learn to suppress the intuitive one, so the old belief tends to reappear under time pressure or in unfamiliar framings rather than being gone. Do you have another question about the lesson?"
-  },
-
-  // === Coherent beliefs and metacognition ===
-  {
-    id: 'coherent_beliefs_def',
-    triggers: ['what are coherent beliefs','coherent beliefs','define coherent beliefs','explain coherent beliefs'],
-    answer: "Coherent beliefs are ideas that fit together without contradicting each other, so the predictions they generate line up rather than clash. In the lesson, coherence is the goal that thought experiments work toward, since the whole point is to help a learner see whether their own ideas hold together. A set of beliefs is incoherent when two of them, followed out, predict opposite things about the same situation. Do you have another question about the lesson?"
-  },
-  {
-    id: 'coherent_vs_naive',
-    triggers: ['difference between coherent beliefs and naive theories','coherent beliefs vs naive theories','same as naive theories','coherent vs naive'],
-    answer: "They are different kinds of things: \"coherent\" describes a quality beliefs can have (fitting together), while a naïve theory is a specific intuitive explanation a child holds. The lesson does not treat them as the same; in fact its point is almost the opposite, since naïve theories are often internally inconsistent, which is to say not coherent. So a naïve theory is the content, and coherence is a property that content may or may not have. Do you have another question about the lesson?"
-  },
-  {
-    id: 'metacognition',
-    triggers: ['metacognition','recognize inaccurate beliefs reflect metacognition','monitoring control calibration','meta cognition','thinking about thinking'],
-    answer: "Yes, it reflects metacognition, because the learner is thinking about their own thinking rather than just about the world. The aspect it draws on most directly is metacognitive monitoring, since the key move is noticing that your own beliefs conflict, which the lesson calls consistency monitoring. Control and calibration come into play afterward, when the learner decides what to do about the conflict and how confident to be, but the thought experiment's core job is to trigger the monitoring step. Do you have another question about the lesson?"
-  },
-
-  // === Philosophy / epistemology ===
-  {
-    id: 'beliefs_subjective',
-    triggers: ['beliefs subjective','single correct explanation','revise toward truth','framework assume correct','are beliefs subjective'],
-    answer: "For its physics example, yes, the framework assumes a correct target, treating the Newtonian explanation as right and the impetus one as the error. That works because physics has a normatively correct answer, which is what lets the lesson call a naïve theory \"inaccurate.\" In domains without an agreed right answer, like morality or taste, you could still detect internal inconsistency, but you could not say which belief should lose out, so the \"revise toward the truth\" part would weaken even though the consistency-checking part would survive. Do you have another question about the lesson?"
-  },
-  {
-    id: 'blank_slate_view',
-    triggers: ['blank slate','children as blank slates','cultures blank slate','adult instruction','differ from blank slate'],
-    answer: "It differs sharply, because the central claim here is that children are not blank slates; they arrive already holding intuitive theories that actively shape how they take in new information. On the blank-slate view, teaching is just pouring in correct content, whereas on this view teaching has to contend with explanations the child already has and may defend. That is exactly why a tool like the thought experiment is needed, since you are not filling an empty mind but helping an existing belief system notice its own conflicts. Do you have another question about the lesson?"
-  },
-
-  // === Holding competing explanations ===
-  {
-    id: 'hold_both_explanations',
-    triggers: ['hold both explanations','can children hold both','can children hold multiple explanations','both impetus and newtonian','two explanations same time'],
-    answer: "Yes, and this is one of the lesson's core claims: a child can hold an impetus explanation and a Newtonian one at once, applying each in different situations. The two only cause trouble when a situation forces both predictions into view at the same moment. Do you have another question about the lesson?"
-  },
-  {
-    id: 'aware_of_multiple',
-    triggers: ['aware they are holding multiple explanations','aware of multiple','do children know they hold','aware of competing explanations','noticing they hold rival ideas'],
-    answer: "Usually not. The explanations tend to be triggered by different contexts, so they rarely sit in the child's mind at the same time to be compared. Because the child is only ever using one at a given moment, there is normally no felt sense of holding rival ideas. Do you have another question about the lesson?"
-  },
-  {
-    id: 'notice_contradictions',
-    triggers: ['can children notice contradictions','notice contradictions among explanations','spot contradictions on their own','notice clash beliefs'],
-    answer: "Typically not on their own, which is the gap the lesson is built around. Noticing a contradiction requires both beliefs to be active at once and lined up against the same situation, and that almost never happens spontaneously. This is precisely why a thought experiment helps, since it deliberately brings both predictions into view so the clash becomes noticeable. Do you have another question about the lesson?"
-  },
-  {
-    id: 'context_dependence',
-    triggers: ['context dependent','moving between explanations by situation','naive theories context dependent','context dependence','why inconsistencies unnoticed'],
-    answer: "Yes on both counts. The fact that a child switches explanations depending on the situation is a sign that these ideas are cued by context rather than unified into one consistent system. And that context-dependence is a large part of why the inconsistencies stay hidden, because two beliefs that are never activated together are never compared, so their disagreement never surfaces. Do you have another question about the lesson?"
-  },
-  {
-    id: 'adults_manage_competing',
-    triggers: ['holding competing explanations change as children grow','adults manage competing beliefs','adults coordinate beliefs','what changes as children grow'],
-    answer: "The basic situation of holding competing explanations does not disappear, but the management of it improves. What develops is the ability to notice conflicts, suppress the intuitive but incorrect explanation, and reliably deploy the correct one, supported by growing cognitive control and reflection. So the change is less about losing the old belief and more about getting better at regulating which explanation wins out. Do you have another question about the lesson?"
-  },
-
-  // === Degrees of belief details ===
-  {
-    id: 'degrees_measurement',
-    triggers: ['how are degrees of belief measured','measuring degrees of belief','who measures degrees of belief','tell when adjusted','measurement of belief'],
-    answer: "A degree of belief is how much confidence a child places in a given explanation, treated like a subjective probability rather than a flat yes or no. The lesson does not spell out a measurement method, but in research it is usually inferred by an outside observer from behavior, such as which prediction the child makes, how consistent they are across similar problems, and how they justify their answer, rather than from the child reporting a number. You can tell a degree has shifted when the child starts favoring a different explanation across varied situations, especially ones they have not been directly coached on. Do you have another question about the lesson?"
-  },
-  {
-    id: 'believe_to_different_degrees',
-    triggers: ['believe each explanation to a different degree','different degrees of belief','what does it mean to believe','trust some more than others'],
-    answer: "It means the child does not treat their explanations as simply true or false but holds several at once, trusting some more than others. One explanation might be their go-to in most situations while another is held more weakly in reserve. Revising a belief, on this view, is just shifting how much trust is assigned to each, not adding or deleting explanations. Do you have another question about the lesson?"
-  },
-  {
-    id: 'adjusting_vs_replacing',
-    triggers: ['difference between adjusting degrees of belief and replacing','adjusting degrees vs replacing','degrees vs replacement','adjust or replace','adjusting degrees compared to replacing'],
-    answer: "Adjusting degrees keeps every explanation available and only changes how much confidence each gets, so the weaker one survives, just trusted less. Replacing overwrites the weaker explanation so the child can no longer access it, changing which explanations exist rather than how strongly they are held. Do you have another question about the lesson?"
-  },
-  {
-    id: 'in_practice_revision',
-    triggers: ['in practice do children revise by adjusting','adjusting confidence or replacing','what really happens in revision','what mechanism in practice','combination of both'],
-    answer: "The evidence leans toward gradual adjustment of confidence as the everyday mechanism, since old explanations tend to persist and resurface rather than vanish, which fits coexistence rather than clean erasure. Genuine replacement does seem to happen in rarer, deeper cases of conceptual change, but a lot of what looks like replacement from the outside is probably heavy down-weighting of an explanation that is still latent. So the honest answer is mostly adjusting confidence. Do you have another question about the lesson?"
-  },
-  {
-    id: 'evidence_needed',
-    triggers: ['how much evidence needed to revise','amount of evidence','how much data needed','evidence required for revision','quantity of evidence'],
-    answer: "There is no fixed amount, because what matters is less the quantity of evidence than whether it creates a conflict the child cannot dismiss. A single well-targeted demonstration can work if it directly contradicts the child's prediction in a way they cannot explain away, while mountains of ambiguous evidence may change nothing. This is part of why a thought experiment can be effective with no new external evidence at all, since one sharp internal contradiction can do the work. Do you have another question about the lesson?"
-  },
-  {
-    id: 'revision_without_guidance',
-    triggers: ['belief revision on its own','without adult guidance','need scaffolding','can revision happen alone','child revise alone'],
-    answer: "It can happen on its own through everyday experience, but it is far more reliable with guidance. Left alone, children often fail to notice the contradictions that would prompt revision, so an adult who poses the right scenario and asks the child to trace its consequences greatly raises the odds. The whole rationale for thought experiments is that this kind of scaffolding makes the necessary conflict visible. Do you have another question about the lesson?"
-  },
-  {
-    id: 'how_long_revision',
-    triggers: ['how long for revision','time to revise','how long children revise','timescale of revision','how quickly revision'],
-    answer: "It varies widely, from minutes in a focused session to years for deep conceptual change. Surface adjustments in confidence can happen quickly within a single well-designed activity, but radically restructuring an intuitive theory, like a full grasp of matter or motion, unfolds slowly over development. So the timescale depends heavily on whether you mean a small shift or a genuine conceptual change. Do you have another question about the lesson?"
-  },
-  {
-    id: 'emotions_in_revision',
-    triggers: ['emotions in belief revision','feelings revising belief','emotional side of learning','dissatisfaction surprise','affect revision'],
-    answer: "The lesson does not focus on emotion, but the process has a clear affective side. The key one is a feeling of dissatisfaction or surprise when a prediction fails or a contradiction surfaces, which is part of what motivates the effort to resolve it. Curiosity can pull a child toward revision, while discomfort or defensiveness can push them to protect the old belief instead, which is one reason gentle framing matters. Do you have another question about the lesson?"
-  },
-
-  // === Age-related ===
-  {
-    id: 'age_thought_experiments',
-    triggers: ['at what age can children engage in thought experiments','age for thought experiments','how young thought experiments','when can children do thought experiments'],
-    answer: "Simple hypothetical reasoning appears in the preschool years, and the disciplined kind strengthens through middle childhood. Concretely, one study found that 6-year-olds could accurately simulate a scenario in a thought experiment and revised their judgments about weight as much as children who saw a real demonstration. So even young children can do it effectively when the scenario is concrete and well guided, with the skill growing as cognitive control matures. Do you have another question about the lesson?"
-  },
-  {
-    id: 'age_competing_beliefs',
-    triggers: ['age children begin hold competing beliefs','when start holding rival beliefs','age coordinate competing beliefs','holding multiple ideas about world'],
-    answer: "Children hold competing intuitive explanations from early childhood, well before school, since these theories form through everyday experience. Coordinating them, meaning noticing and reconciling conflicts, develops later and more slowly, because it depends on being able to hold both ideas in mind at once and compare them. So holding rival beliefs comes early, but managing them is a later achievement. Do you have another question about the lesson?"
-  },
-
-  // === Newtonian and motion example ===
-  {
-    id: 'newtonian_def',
-    triggers: ['what is newtonian mechanics','newtonian mechanics','newton','define newtonian','explain newtonian'],
-    answer: "It is the scientific account of motion in which a moving object keeps moving at the same speed in the same direction unless an outside force acts on it. In the lesson it is the correct explanation the child is meant to revise toward, and for a ball moving through empty space it predicts the ball will simply keep going. It contrasts with the intuitive impetus idea that objects slow down on their own. Do you have another question about the lesson?"
-  },
-  {
-    id: 'why_rolling_ball',
-    triggers: ['why use rolling ball example','rolling ball example','why this example','ball in space example','ball example specifically'],
-    answer: "Because motion is the classic case where a coherent naïve theory collides cleanly with the scientific one, making the contradiction easy to display. The impetus and Newtonian views give flatly opposite predictions for the same ball, which is exactly what you want to show how a thought experiment exposes a conflict. It is also a heavily studied domain, so the misconception is well documented and reliable. Do you have another question about the lesson?"
-  },
-  {
-    id: 'earth_vs_empty_space',
-    triggers: ['ball on earth vs empty space','rolling on earth','different predictions earth','why empty space','friction earth'],
-    answer: "Yes, and that difference is the whole point of choosing empty space. On Earth, friction makes the ball slow and stop, so the impetus prediction looks confirmed and the contradiction stays hidden. Removing friction by imagining empty space strips away that cover, so the two explanations finally make visibly opposite predictions and the conflict comes into the open. Do you have another question about the lesson?"
-  },
-  {
-    id: 'competing_in_morality',
-    triggers: ['competing explanations in morality','social behavior','domain without clear answer','morality','beliefs in domains without truth'],
-    answer: "The coexistence-of-competing-explanations part would still apply, since people hold rival intuitions in those domains too, and you could still surface internal inconsistencies. What changes is the \"revise toward the correct answer\" part, because without an agreed right answer you cannot say which belief should lose weight. So consistency-checking survives, but error-correction toward a known truth does not, which makes revision murkier. Do you have another question about the lesson?"
-  },
-
-  // === Educator role ===
-  {
-    id: 'educator_role',
-    triggers: ['role of educators','teachers role revise beliefs','what should teachers do','educators help children revise','teacher guidance'],
-    answer: "Their central role is to make hidden conflicts visible and to provide a credible alternative, rather than simply asserting the correct answer over the child's existing one. That means eliciting what the child already believes, designing situations where those beliefs make a testable prediction, and guiding the child to notice when the prediction fails. In short, the educator engineers the dissatisfaction and supports the path to a better explanation. Do you have another question about the lesson?"
-  },
-  {
-    id: 'designing_thought_exp',
-    triggers: ['design thought experiments challenge misconceptions','developmentally appropriate','how to design thought experiment','designing for kids','age appropriate thought experiment'],
-    answer: "Start from the specific misconception you want to target, then build a concrete, imaginable scenario in which the child's belief makes a clear prediction that can be shown to fail. Keep it simple and vivid enough for the child to simulate mentally, as the rice-grain-on-a-fulcrum example does for young children, and scaffold with questions rather than lecturing. Matching the scenario's complexity to the child's reasoning capacity is what keeps it both challenging and age-appropriate. Do you have another question about the lesson?"
-  },
-  {
-    id: 'social_cultural_factors',
-    triggers: ['social and cultural factors influence revising','culture beliefs','family peers influence','cultural factors revising','community influences beliefs'],
-    answer: "They matter a lot, because beliefs are partly shaped and reinforced by family, peers, and cultural teaching, and revising an idea can feel like going against one's community. Peer discussion can also be a powerful catalyst, since exchanging reasons with someone who disagrees can prompt change, sometimes within minutes. So whether a child is willing to revise depends not only on the evidence but on the social context in which the idea is held. Do you have another question about the lesson?"
-  },
-  {
-    id: 'test_revision_research',
-    triggers: ['how could researchers test thought experiments cause revision','test if thought experiments work','research methodology revise','study design test revision','pre test post test'],
-    answer: "The standard approach is an experiment with a pre-test, an intervention, and a post-test, often comparing a thought-experiment group against another condition. For example, one large study had participants reason about force and motion in a pre-training, training, and post-training design across two experiments with over a thousand participants, which lets researchers see whether the thought experiment, and not something else, produced the change. Random assignment to conditions is what supports the causal claim. Do you have another question about the lesson?"
+    id: 'evidence_distinguishes_views',
+    triggers: [
+      'why evidence is needed to distinguish the views',
+      'which view is better supported by evidence',
+      'how evidence distinguishes the two explanations',
+      'why describing the same event is not enough',
+      'how can scientists compare the two views',
+      'scientific question about the two accounts',
+      'testing predictions when friction is low'
+    ],
+    answer: "Both views can describe an everyday event like a book slowing down, but they explain it differently. Their predictions differ when friction approaches zero, so evidence about motion under those conditions can help distinguish between them. Do you have another question about the lesson?"
   }
 ];
+
 
 const FOLLOWUP_PATTERNS = [
   /^(can you |could you |please )?(explain|describe|say|tell|rewrite|simplify|clarify|rephrase|summarize|break).*(again|differently|simpler|simple|shorter|clearer|easier|like (i|a|im)|5 year|kid|child|me again)/i,
@@ -5713,7 +5711,7 @@ function renderChatbotWelcome() {
     removeTypingIndicator(typingId);
     const msg = document.createElement('div');
     msg.className = 'chat-msg assistant';
-    msg.innerHTML = `<span class="role">Chatbot</span><div class="body">Hi! I'm a chatbot here to help with the lesson you just read on <strong>thought experiments and children's belief revision</strong>. The lesson is on the left, so you can read and refer back to it anytime, and you can ask me questions about it here. For example, you can ask me what any key term in the lesson means, or any other question you have about the lesson. What's your first question?</div>`;
+    msg.innerHTML = `<span class="role">Chatbot</span><div class="body">Hi! I'm a chatbot here to help with the lesson you just read on <strong>Newton's First Law of Motion</strong>. The lesson is on the left, so you can read and refer back to it anytime, and you can ask me questions about it here. For example, you can ask me what any key term in the lesson means, or any other question you have about the lesson. What's your first question?</div>`;
     container.appendChild(msg);
     container.scrollTop = container.scrollHeight;
   }, 1500);

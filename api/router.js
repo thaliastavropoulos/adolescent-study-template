@@ -30,7 +30,7 @@ async function loadFirebaseSemanticCache() {
   try {
     // Non-critical: if Firebase is slow/unconfigured we route without the
     // cross-participant cache rather than stalling every question for 30s.
-    const snap = await withTimeout(getFirebaseDatabase().ref('semantic_cache').get(), 2500);
+    const snap = await withTimeout(getFirebaseDatabase().ref('semantic_cache_adolescent_motion_v1').get(), 2500);
     const data = snap.val();
     return data
       ? Object.values(data).filter(e => e && e.question && e.answer)
@@ -64,7 +64,7 @@ DEFAULT RULE. When in doubt, REUSE. The cost of incorrectly reusing is small (a 
 REUSE RULES. Reuse (CURATED or CACHE) when the participant's question is asking for the SAME core information as an existing entry, even if:
 - it is paraphrased ("what is X" vs "explain X" vs "describe X" vs "tell me about X")
 - it is a shortened form ("X?" or just "X" right after a fuller question about X is in the catalog or context)
-- it contains typos ("redistribrition", "naive theroy", "thot xperment")
+- it contains typos ("velocty", "inertai", "impetis")
 - it is reordered ("is X different from Y" vs "is Y different from X")
 - it repeats a question the participant already asked moments earlier (in any form, including one-word repeats)
 - it has filler or softening words ("so what does X mean?", "wait, X?", "can you tell me X again")
@@ -82,10 +82,10 @@ DISAMBIGUATION.
 - When the question could plausibly be REUSE or GENERATE, REUSE wins. Tie-breaker is consistency.
 
 WORKED EXAMPLES.
-- Prior: (none). Now: "what is consistency monitoring" -> CURATED: consistency_monitoring_def
-- Prior: Q "what is consistency monitoring" -> A. Now: "consistency monitoring?" -> CURATED: consistency_monitoring_def (shortened repeat)
-- Prior: Q "what does internally inconsistent mean" -> A. Now: "internally inconsistent?" -> CURATED: internally_inconsistent (shortened repeat of same concept)
-- Prior: (none). Now: "redistrribution? :)" -> CURATED: belief_weight_def (typo, same concept)
+- Prior: (none). Now: "what is velocity" -> CURATED: velocity
+- Prior: Q "what is velocity" -> A. Now: "velocity?" -> CURATED: velocity (shortened repeat)
+- Prior: Q "what does dynamically equivalent mean" -> A. Now: "dynamically equivalent?" -> CURATED: dynamically_equivalent (shortened repeat of same concept)
+- Prior: (none). Now: "inertai? :)" -> CURATED: inertia (typo, same concept)
 - Prior: Q "what is X" -> A. Now: "give me an example of X" -> GENERATE (asking for new info: example)
 - Prior: Q "what is X" -> A. Now: "how is it different from Y" -> CURATED if an X-vs-Y entry exists, else GENERATE
 - Prior: (none). Now: "what will i be asked later" -> CURATED: future_questions
