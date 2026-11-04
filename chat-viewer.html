@@ -1,9 +1,25 @@
 <!DOCTYPE html>
+<!--
+  ADOLESCENT STUDY CHAT VIEWER
+
+  Researcher utility for reviewing the chatbot transcript in a completed-
+  participant JSON export from index.html. Select or drop a JSON file to view
+  it. The file is read locally in the browser; this viewer does not fetch
+  participant records or upload the selected file.
+
+  CUSTOMIZE:
+  Keep render() aligned with chatbot_conversation and session in
+  buildParticipantPayload(). This is a transcript-only viewer; it does not
+  display the participant's other study responses.
+
+  COMPATIBILITY:
+  Partial/dropout snapshots use a different structure and may not be supported.
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HPL Chat Viewer</title>
+<title>Adolescent Study Chat Viewer</title>
 <style>
   :root {
     --bg: #f8fafc;
@@ -167,7 +183,7 @@
 <body>
 
 <div class="topbar">
-  <h1>HPL Chat Viewer</h1>
+  <h1>Adolescent Study Chat Viewer</h1>
   <label class="file-label" for="json-file">Open participant JSON</label>
   <input type="file" id="json-file" accept=".json" onchange="loadFile(event)" />
   <div class="spacer"></div>
