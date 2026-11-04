@@ -1,6 +1,14 @@
 import { applyCors, authAndRateLimit, readJson } from '../lib/auth.js';
 import { getFirebaseDatabase, withTimeout } from '../lib/firebase-admin.js';
 
+// STUDY CONFIGURATION:
+// This handler reads and writes study data in Firebase. Before adapting it
+// for a separate study, review and namespace the database paths used below,
+// including counters, email/contact records, chatbot messages, the Q&A
+// repository, and the semantic cache. Coordinate path changes with the
+// frontend and api/router.js. Comments do not provide data isolation; use
+// the intended database and access controls for each study.
+
 const CONDITION_ROTATION = ['baseline', 'private', 'visible'];
 const MAX_STRING = 32 * 1024;
 

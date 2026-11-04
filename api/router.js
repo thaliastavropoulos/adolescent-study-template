@@ -1,6 +1,13 @@
 import { applyCors, authAndRateLimit, readJson, getOpenAIKey } from '../lib/auth.js';
 import { getFirebaseDatabase, withTimeout } from '../lib/firebase-admin.js';
 
+// STUDY CONFIGURATION:
+// Keep the routing instructions and cache namespace aligned with the
+// participant-facing CHATBOT_FAQ in index.html and the system prompt in
+// lib/chatbot-system-prompt.js. Use a study-specific cache path when studies
+// share a Firebase database; changing the path here must also be reflected
+// in the Firebase write path in api/firebase.js.
+
 const ALLOWED_MODELS = new Set(['gpt-5.4-mini', 'gpt-4o-mini']);
 const MAX_COMPLETION_TOKENS = 60;
 const MAX_INPUT_CHARS = 32 * 1024;
