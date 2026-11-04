@@ -1,4 +1,4 @@
-**The original HPL study was created by Blerim Jasahri.** This template version with more detailed instructions was copied from Blerim's study by Ilona Bass.
+**The original adult HPL study was created by Blerim Jasahri.** Ilona Bass adapted that study into a template version with more detailed instructions. This adolescent-study template was adapted from Ilona’s version for research with high school students learning about Newton’s First Law of Motion.
 
 # Getting this study running
 
