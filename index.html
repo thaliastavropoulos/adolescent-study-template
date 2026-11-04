@@ -1,20 +1,79 @@
 <!DOCTYPE html>
+<!--
+  ADOLESCENT STUDY TEMPLATE
+  Online studies of Newton's First Law of Motion
+
+  This file contains the participant screens, styles, study content, browser
+  state, and export builders. It requires the repository's /api routes; opening
+  index.html directly is not enough to test assignment, chatbot, or uploads.
+
+  HOW TO ADAPT THIS FILE
+  Search for CUSTOMIZE to find study-specific content and configuration.
+  Search for REVIEW for inherited settings/content that need a study decision.
+  Search for COMPATIBILITY before renaming stored keys or removing legacy code.
+
+  1. Configure your own Firebase database and the four DATAPIPE_*_EXPERIMENT_ID
+     constants. Keep browser configuration consistent with api/firebase.js,
+     lib/firebase-admin.js, and the deployment environment. Never put API keys
+     or service-account credentials in this file.
+  2. Replace eligibility, contact details, consent, framing, lesson, and debrief
+     text with your study materials. Consent text and its version metadata must
+     agree. Existing study-specific text is an example, not a generic form.
+  3. Edit DEMO_QUESTIONS, ABOUT_YOU_ITEMS, LEARNING_ITEMS_RAW, PRETEST_ITEM_IDS,
+     the experience/instructor scales, and MANIP_OPTIONS as needed. Keep item
+     IDs and option keys stable once collecting data; exports use those IDs.
+  4. Update BOTH lesson copies (lesson and chatbot screens), CHATBOT_FAQ, and
+     lib/chatbot-system-prompt.js together. Update router examples and use a
+     study-specific semantic-cache path in api/router.js and api/firebase.js.
+  5. If changing the flow, update SCREENS, HTML buttons, goTo() hooks, and the
+     afterLessonRoute()/afterExpLessonRoute() branches. SCREENS alone does not
+     determine navigation. Update JSON/XLSX builders when changing measures.
+  6. Check the instruction text for hard-coded question counts and GATE_CONFIG
+     for reading times. Supply the images referenced by image-answer options
+     and replace their alt-text placeholders with neutral descriptions.
+  7. Test each condition with ?researcher-access and a fresh session. This is a
+     convenience mode, not authentication or a blanket block on network writes.
+     Use separate test storage. See researcherModeEnabled() and resetStudy().
+
+  CURRENT FLOW
+  Landing > email > consent > instructions > Important Note > demographics >
+  About you > condition assignment > framing > pre-test > lesson >
+  [chatbot for private/visible conditions] > post-test > lesson experience >
+  [chatbot experience + manipulation check for private/visible conditions] >
+  instructor perceptions > lesson debrief > study debrief > completion/save.
+
+  FILE ORGANIZATION
+  Styles; participant-screen HTML; researcher panel; configuration and state;
+  item/answer banks; export/storage helpers; API helpers; navigation and item
+  presentation; consent/assignment; chatbot; questionnaires; startup/tracking.
+
+  COMPATIBILITY
+  Existing hpl_* storage keys, hplSystem, screen IDs, and exported field names
+  are retained so this adolescent study template does not reset sessions or change API contracts.
+  Before running an independent study on the same origin, plan a consistent
+  storage namespace and schema migration rather than renaming isolated keys.
+
+  REVIEW
+  Adult-consent wording and anonymity claims remain for explicit protocol/content review.
+-->
+
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>HPL Study — Thought Experiments and Children's Belief Revision</title>
+<title>Adolescent Study — Online studies of Newton's First Law of Motion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<!-- Third-party libs pinned to exact versions with Subresource Integrity (SRI):
-     the browser refuses to run the file if its hash does not match, so a
-     compromised/altered CDN file cannot inject code into the study. -->
+<!-- Third-party libraries: Markdown rendering, HTML sanitization, consent PDF,
+     and Excel export. Versions and integrity hashes are paired; if updating a
+     CDN script, update its SRI hash too. A mismatched script is not executed. -->
 <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js" integrity="sha384-948ahk4ZmxYVYOc+rxN1H2gM1EJ2Duhp7uHtZ4WSLkV4Vtx5MUqnV+l7u9B+jFv+" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.11/dist/purify.min.js" integrity="sha384-o44XUELLEnv/iSlA1NWxBweqbD4TSR0qgq2VzVsxtkHS989JJjGKSE9vkfo5MN4K" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 <style>
+  /* CUSTOMIZE: shared colors, typography, and spacing tokens. */
   :root {
     --bg: #ffffff;
     --bg-soft: #fafafa;
@@ -118,7 +177,7 @@
   }
   .card-soft { background: var(--bg-soft); border-radius: 12px; padding: 24px; margin-bottom: 20px; }
 
-  /* === Learning-intro screen — simple, just bumped to a larger reading size === */
+  /* === Learning-measure introduction === */
   .learning-intro-body {
     max-width: 640px;
     font-size: 18px;
@@ -234,7 +293,6 @@
   .char-counter.met { color: var(--success); }
   .char-counter.over { color: var(--error); font-weight: 600; }
 
-  /* === Likert: numbered with legend === */
   /* === Likert 7-point slider === */
   .likert-slider-row {
     padding: 32px 0;
@@ -352,7 +410,6 @@
     width: 20%;
   }
 
-  /* === Option list === */
   /* === Consent form (full HRP-502 text rendered inline) === */
   .consent-doc { max-width: 760px; margin: 0 auto; font-size: 15.5px; line-height: 1.7; color: var(--ink-soft); }
   .consent-doc .consent-titlebox {
@@ -472,6 +529,7 @@
     transition: width .5s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
+  /* === About you: fixed-order five-point questionnaire table === */
   #screen-about-you {
     max-width: 1200px;
     margin: 0 auto;
@@ -1300,7 +1358,7 @@
     border-radius: 6px;
   }
 
-  /* === CRT === */
+  /* === Legacy CRT styles (not used by the current participant flow) === */
   .crt-card {
     background: var(--bg-soft);
     border-radius: 14px;
@@ -1643,6 +1701,7 @@
 
 <div class="container" id="main-container">
 
+  <!-- CUSTOMIZE: study duration, topic, eligibility, and participation wording. -->
   <!-- ============ LANDING ============ -->
   <section class="screen active" id="screen-landing">
     <div class="screen-inner">
@@ -1682,6 +1741,9 @@
     </div>
   </section>
 
+  <!-- Email is required by the current flow and used for duplicate checks and
+       contact records. Changing collection requires updating storage/export
+       helpers as well as this screen; see PARTICIPANT EMAIL below. -->
   <!-- ============ EMAIL VERIFICATION ============ -->
   <section class="screen" id="screen-email">
     <div class="screen-inner">
@@ -1691,7 +1753,7 @@
       <div style="margin-bottom:8px;">
         <label for="participant-email" class="sr-only">Email address</label>
         <input type="email" id="participant-email"
-               placeholder="yourname@gse.harvard.edu"
+               placeholder="yourname@example.com"
                autocomplete="email"
                aria-describedby="email-error"
                oninput="validateEmailInput()"
@@ -1707,6 +1769,11 @@
     </div>
   </section>
 
+  <!-- CUSTOMIZE: replace the full consent document and contact details with
+       your study's approved materials. Keep assignConditionAndContinue()'s
+       consent_form_version synchronized. The generated PDF reads this DOM.
+       REVIEW: the supplied document includes an 18-or-older statement
+       and an adult consent-form version; retained for protocol review. -->
   <!-- ============ CONSENT ============ -->
   <section class="screen" id="screen-consent">
     <div class="screen-inner">
@@ -1928,6 +1995,8 @@
     </div>
   </section>
 
+  <!-- Eight questions are rendered from DEMO_QUESTIONS. They are optional;
+       SCI_WHICH is conditional on SCI_TAKEN. Responses autosave locally. -->
   <!-- ============ DEMOGRAPHICS ============ -->
   <section class="screen" id="screen-demographics">
     <span class="tag">A few questions about you</span>
@@ -1949,6 +2018,8 @@
     </div>
   </section>
 
+  <!-- Fixed-order five-point table. All items are required before condition
+       assignment. The separate seven-point slider renderer is not used here. -->
   <!-- ============ ABOUT YOU: SELF-DESCRIPTION ============ -->
   <section class="screen" id="screen-about-you">
     <span class="tag">About you</span>
@@ -1989,6 +2060,9 @@
     </div>
   </section>
 
+  <!-- CUSTOMIZE: FRAMING supplies condition-specific text. Keep the checkbox
+       wording in renderFraming(), visibility banner, manipulation check, and
+       debrief consistent with the intended study manipulation. -->
   <!-- ============ FRAMING ============ -->
   <section class="screen" id="screen-framing">
     <div class="screen-inner">
@@ -2033,6 +2107,8 @@
     </div>
   </section>
 
+  <!-- Pre-test uses PRETEST_ITEM_IDS and saves its question/option order for
+       reuse at post-test. The introduction and one-item view share a screen. -->
     <!-- ============ PRE-TEST ============ -->
     <section class="screen" id="screen-pre-test">
 
@@ -2097,6 +2173,8 @@
       </div>
     </section>
 
+  <!-- CUSTOMIZE: primary lesson copy. Also update the chatbot reference copy,
+       the server-side system prompt, answer bank, and lesson debrief. -->
     <!-- ============ LESSON ============ -->
     <section class="screen" id="screen-lesson">
       <div class="lesson-intro">
@@ -2137,6 +2215,9 @@
     </div>
   </section>
 
+  <!-- CUSTOMIZE: the left panel contains a second, static copy of the lesson.
+       Keep it synchronized with screen-lesson. The welcome and visibility text
+       are generated by renderChatbotWelcome() and renderVisibilityBanner(). -->
   <!-- ============ CHATBOT ============ -->
   <section class="screen" id="screen-chatbot">
     <div style="max-width:1600px; margin:0 auto;">
@@ -2192,6 +2273,7 @@
     </div>
   </section>
 
+  <!-- CUSTOMIZE: keep the stated question count aligned with LEARNING_ITEMS_RAW. -->
   <!-- ============ LEARNING INTRO ============ -->
   <section class="screen" id="screen-learning-intro">
     <span class="tag">Learning measure</span>
@@ -2273,7 +2355,7 @@
     </div>
   </section>
 
-  <!-- ============ Science Instructor QUESTIONS ============ -->
+  <!-- ============ SCIENCE INSTRUCTOR QUESTIONS ============ -->
   <section class="screen" id="screen-si-questions">
     <span class="tag">Your Science Instructor</span>
     <h1>About your Science Instructor</h1>
@@ -2368,6 +2450,9 @@
     </div>
   </section>
 
+  <!-- CUSTOMIZE: study purpose, condition explanation, contacts, and privacy
+       wording. renderVisibleDebrief() adds the condition-specific explanation
+       and replaces the confirmation text. Check both sources together. -->
   <!-- ============ STUDY DEBRIEF ============ -->
   <section class="screen" id="screen-study-debrief">
     <span class="tag">About the study</span>
@@ -2389,7 +2474,7 @@
     <div class="option-list" style="margin:24px 0 8px;">
       <label id="debrief-confirm-label" style="background:#f0f7ff; border-color:#bfdbfe;">
         <input type="checkbox" id="debrief-confirm" onchange="updateDebriefConfirm()" />
-        <span style="font-weight:500; color:var(--ink);" id="confirm-text">I confirm that I understand my responses are anonymous. My answers will not be shared with my Teaching Fellow, course instructor, or anyone outside the research team.</span>
+        <span style="font-weight:500; color:var(--ink);" id="confirm-text">I confirm that I understand my responses are anonymous. My answers will not be shared with my Science Instructoror anyone outside the research team.</span>
       </label>
     </div>
 
@@ -2466,21 +2551,25 @@
 
 <script>
 
-// Firebase writes and shared study data go through the same-origin
-// /api/firebase server route. The email duplicate check reads one
-// hashed-email path directly for speed. The database URL is public
-// Firebase config, not a secret.
-// Replace the entire "REPLACE ME!" string, including the brackets, with your Firebase URL:
-const FIREBASE_DATABASE_URL = 'https://adolescent-study-default-rtdb.firebaseio.com'; // <-- make sure there is no "/" at the end of this URL -- should look something like "https://study-template-default-rtdb.firebaseio.com"
+// =====================================================
+// FIREBASE CONFIGURATION
+// =====================================================
+// CUSTOMIZE: set your Firebase Realtime Database URL below, without a trailing
+// slash. Match the backend database configuration in lib/firebase-admin.js.
+// Writes go through /api/firebase; duplicate-email lookup first reads one
+// /email_hashes/<hash> path directly. The URL is public configuration, not a
+// credential. Database access rules and server credentials are configured
+// separately; see the repository setup instructions.
+const FIREBASE_DATABASE_URL = 'https://adolescent-study-default-rtdb.firebaseio.com';
 const EMAIL_HASHES_DIRECT_URL = FIREBASE_DATABASE_URL + '/email_hashes';
 
 // =====================================================
 // STATE
 // =====================================================
 const state = {
-  // Temporary working ID. A sequential P00X is only claimed at the
-  // moment the response JSON is successfully uploaded to Dataverse, so the
-  // P-series stays gap-free (every P00X = one completed participant).
+  // Temporary working ID. A sequential P00X is requested at completion,
+  // before upload. Failed uploads can leave gaps; the counter is not proof
+  // that a response file reached Dataverse.
   participantId: 'temp-' + Math.random().toString(36).slice(2, 10).toUpperCase(),
   participantEmail: null,
   condition: null,
@@ -2506,6 +2595,8 @@ const state = {
   currentScreen: 'landing'
 };
 
+// Screen inventory/order for progress and the researcher jump menu. Actual
+// navigation is controlled by buttons and route functions, not this array.
 const SCREENS = [
   'landing','email','consent','instructions','ground-rules', 'demographics', 'about-you',
   'framing', 'pre-test','lesson','chatbot',
@@ -2517,6 +2608,9 @@ const SCREENS = [
 // =====================================================
 // FRAMING TEXT
 // =====================================================
+// CUSTOMIZE: condition keys must match CONDITION_ROTATION and api/firebase.js.
+// These strings are inserted as HTML. Keep approved manipulation wording in
+// sync with renderFraming(), renderVisibilityBanner(), and the study debrief.
 const FRAMING = {
   baseline: `<p>Thank you for agreeing to participate in our study. In this study, you will first answer a few questions about <b>Newton’s First Law of Motion</b>. These questions will assess your initial understanding of the topic before you begin the lesson.</p><p>You will then complete a lesson about Newton’s First Law of Motion and two different explanations of why objects move. Once you are done with the lesson, you will be asked to answer a few questions about the material to see what you have learned from the lesson. We do not expect you to learn everything, but <b>we expect you to do your best, so please make sure you pay attention to the lesson.</b></p>`,
   private: `<p>Thank you for agreeing to participate in our study. In this study, you will first answer a few questions about <b>Newton’s First Law of Motion</b>. These questions will assess your initial understanding of the topic before you begin the lesson.</p><p>You will then complete a lesson about Newton’s First Law of Motion and two different explanations of why objects move. Once you are done with the lesson, you will be asked to answer a few questions about the material to see what you have learned from the lesson. We do not expect you to learn everything, but <b>we expect you to do your best, so please make sure you pay attention to the lesson.</b></p><p class="hl-key">Before answering the study questions, you will have the opportunity to interact with an AI chatbot and ask any questions you have about the lesson.</p><p>You may ask as many questions as you would like. The chatbot you'll interact with here is built specifically for this study. It is a different tool from any AI tools you may have encountered in your high school.</p><p class="hl-key">All of your interactions with the chatbot, including the questions you ask, will be anonymous and visible only to the research team, and to no one else. The research team, and only the research team, will be able to read your conversations with the chatbot, but they will not be able to tell which participant any conversation belongs to.</p><p>This way, you can review any parts of this lesson that you find confusing.</p>`,
@@ -2526,6 +2620,9 @@ const FRAMING = {
 // =====================================================
 // LIKERT SCALES + ITEMS
 // =====================================================
+// CUSTOMIZE: seven-point experience/instructor measures. If changing the
+// response scale, update renderLikert(), onSliderInput(), and _buildLikertSection()
+// together. The About you table has its own five-point scale.
 const LIKERT_LABELS = ['Strongly Disagree', 'Disagree', 'Somewhat Disagree', 'Neither', 'Somewhat Agree', 'Agree', 'Strongly Agree'];
 
 const EXP_LESSON_ITEMS = [
@@ -2556,8 +2653,10 @@ const SI_ITEMS = [
 ];
 
 // =====================================================
-// CRT
+// LEGACY CRT ITEM BANK (not administered in this study)
 // =====================================================
+// COMPATIBILITY: retained from the original template with the CRT helpers below.
+// Restoring CRT requires screens, routes, scoring, and exports, not just items.
 const CRT_ITEMS = [
   { id: 'bat_ball', text: 'A bat and a ball cost $1.10 in total. The bat costs $1.00 more than the ball. How much does the ball cost?', unit: 'cents' },
   { id: 'widgets', text: 'If it takes 5 machines 5 minutes to make 5 widgets, how long would it take 100 machines to make 100 widgets?', unit: 'minutes' },
@@ -2566,9 +2665,10 @@ const CRT_ITEMS = [
   { id: 'shoes', text: 'A store owner reduced the price of a $100 pair of shoes by 10 percent. A week later, he reduced the price of the shoes by another 10 percent. How much do the shoes cost now?', unit: 'dollars' }
 ];
 
+// CUSTOMIZE: options and prompt for the visibility manipulation check.
 const MANIP_OPTIONS = [
   'The research team',
-  'My Teaching Fellow',
+  'My Science Instructor',
   'Other students in the course',
   'No one',
   'I am not sure'
@@ -2576,12 +2676,14 @@ const MANIP_OPTIONS = [
 
 const MANIP_PROMPT = 'Based on what you were told at the start of the study, who will be able to see the conversations you had with the chatbot? (Select all that apply.)';
 
-// CRT scoring key moved server-side (api/score.js) so the answers are not
-// readable in the client (participants could otherwise look them up in the
-// console). The client posts raw CRT answers to /api/score at completion and
-// stores the returned annotations in state.responses.crt_scored — see
-// scoreCrtFromBackend().
+// COMPATIBILITY: scoreCrtFromBackend() uses api/score.js, but the current
+// completion flow does not call it. CRT is not a current study measure.
 
+// CUSTOMIZE: demographics shown in array order. IDs are export variable names.
+// Supported controls: radio by default, multi:true for checkboxes, type:'text'
+// for free text. SCI_TAKEN / SCI_WHICH / SCI_WHICH_OTHER have explicit conditional
+// logic in demoQuestionIsVisible(), the renderer, saver, and export builder.
+// If renaming those IDs, update all four places together.
 const DEMO_QUESTIONS = [
   {
     id: 'GRADE',
@@ -2673,7 +2775,10 @@ const DEMO_QUESTIONS = [
 
 // =====================================================
 // ABOUT YOU: EATQ-R ITEMS
-// Keep the document's item IDs and presentation order.
+// CUSTOMIZE: preserve validated wording, item IDs, order, and reverse flags
+// when using this instrument. This is a five-point scale, separate from the
+// seven-point experience sliders. buildAboutYouPayload() exports raw ratings
+// and 6-minus-rating scores for reverse items; it does not compute scale means.
 // =====================================================
 const ABOUT_YOU_LABELS = [
   'Almost always untrue of you',
@@ -2771,37 +2876,20 @@ const ABOUT_YOU_ITEMS = [
 ];
 
 // =====================================================
-// CHATBOT ANSWER CACHE (loaded from Firebase, editable without code changes)
+// CHATBOT ANSWER BANK AND REFERENCE EMBEDDINGS
 // =====================================================
-// ============================================================
-// CURATED REPOSITORY ROUTER (embedding + GPT-routed semantic match)
-// ------------------------------------------------------------
-// The in-code CHATBOT_FAQ below is the source of truth: 26 researcher
-// vetted Q&A pairs. At chatbot-screen open we pre-compute one embedding
-// per trigger phrase (one network call, batched). For every participant
-// question we:
-//   1. Embed the question (one call).
-//   2. Cosine-rank against every trigger embedding.
-//   3. If the top match's cosine >= MATCH_FLOOR we send the question
-//      AND the candidate's curated question to a deterministic GPT
-//      router (gpt-5.4-mini, temperature 0) which answers REUSE / NEW.
-//   4. REUSE  -> return the curated answer verbatim (identical text
-//                for every participant who asks any paraphrase).
-//      NEW    -> call the main model with a scope anchor that pins the
-//                fresh answer to the realm of the curated answers.
-// Why this works "flawlessly": the embedding step catches typos and
-// rewordings the old Jaccard score missed (e.g. "experient"/"different"
-// vs "experiment"/"differ"), and the GPT verifier guards against
-// near-misses where two questions share words but mean different
-// things (definition vs. comparison vs. example).
-// ============================================================
+// CHATBOT_FAQ is the researcher-authored answer bank. The router chooses a
+// curated answer, a cached answer, or fresh generation; it does not apply a
+// cosine threshold. Embeddings rank examples for fresh-answer scope anchors.
+// Follow-up and meta-question patterns bypass the router (see sendChatMessage).
+// The API may be called even when a curated answer is ultimately returned.
+// =====================================================
 let curatedRepoEmbeddings = null; // [{ id, triggerText, embedding, answer }]
 let curatedRepoLoading = null;
 
-// The embed endpoint caps a batch at 256 inputs (api/embed.js MAX_BATCH).
-// The curated repo flattens to ~330 trigger phrases, so split into chunks
-// well under that cap and stitch the results back together in order. Each
-// OpenAI embedding carries its own `index`, so we sort by it to be safe.
+// Batch trigger embeddings below api/embed.js's input-count limit. Keep this
+// value within that endpoint's MAX_BATCH when changing either file. Results
+// are sorted by each embedding's index before assembling the reference bank.
 const EMBED_BATCH_SIZE = 128;
 async function getEmbeddingsBatch(texts) {
   const out = [];
@@ -2841,10 +2929,11 @@ async function precomputeCuratedRepoEmbeddings() {
   return curatedRepoLoading;
 }
 
-// Curated Q&A repository. Researcher-vetted answers that the chatbot
-// returns instantly when a participant asks something similar to a
-// listed trigger, bypassing OpenAI. Each entry has triggers (phrases
-// participants might use) and an answer (verbatim canonical text).
+// CUSTOMIZE: each entry needs a stable id, trigger phrases, and canonical
+// answer. The router sees the first trigger and a 250-character answer preview;
+// all triggers contribute to reference embeddings. Keep server prompt and
+// router example IDs aligned with this bank. Update server cache paths for a
+// new lesson so previous-study answers are not reused inadvertently.
 const CHATBOT_FAQ = [
   // === Factual questions ===
   {
@@ -3185,6 +3274,8 @@ const CHATBOT_FAQ = [
 ];
 
 
+// Follow-ups are generated with conversation context rather than reused from
+// the router. These patterns are heuristics; changing them changes treatment.
 const FOLLOWUP_PATTERNS = [
   /^(can you |could you |please )?(explain|describe|say|tell|rewrite|simplify|clarify|rephrase|summarize|break).*(again|differently|simpler|simple|shorter|clearer|easier|like (i|a|im)|5 year|kid|child|me again)/i,
   /like (i'?m|i am) (a )?(5|five|kid|child|student|beginner)/i,
@@ -3198,11 +3289,10 @@ const FOLLOWUP_PATTERNS = [
   /^(another|one more|more|different) (one|example|instance|case)\?*$/i
 ];
 
-// Meta/categorization patterns — questions asking *why* or *how* something
-// qualifies as a category, not asking for a definition. These look superficially
-// like definition questions (same nouns) but the FAQ definition won't answer them.
-// Examples: "how is naive theory a theory", "why is impetus a force",
-// "is enrichment really learning", "what makes belief revision hard".
+// Meta/categorization questions also bypass routing and cache persistence.
+// These broad patterns can match causal physics questions (for example,
+// "why does the book slow down"). Keep or change that policy deliberately;
+// a matching FAQ entry alone does not guarantee a verbatim response.
 const META_PATTERNS = [
   /^(how|why|when)\s+(is|are|do|does|did|can|could|should|would|might)\s+.+?\s+(a|an|the)\s+\w+/i,
   /^(is|are)\s+.+?\s+(really|actually|truly|even|still|considered|called)\b/i,
@@ -3220,30 +3310,16 @@ function isMetaQuestion(question) {
   return META_PATTERNS.some(p => p.test(q));
 }
 
-// Returns the top curated candidate (by cosine vs. trigger embeddings)
-// only if its cosine clears MATCH_FLOOR. The caller then asks the GPT
 // =====================================================
 // UNIFIED GPT ROUTER
 // -----------------------------------------------------
-// One GPT call per question decides everything: look up
-// a canonical answer in the curated repository, look up a
-// reused answer from the cross-participant cache, or
-// generate fresh. No cosine, no embedding thresholds.
-//
-// The router sees:
-//   - The 55 curated entries (id, first trigger, answer)
-//   - The server-side Firebase cache and this session's cache
-//   - Last 4 turns of conversation
-//   - The current question
-//
-// It outputs one of:
-//   CURATED: <id>      -> return that curated answer verbatim
-//   CACHE: <index>     -> return that cache answer verbatim
-//   GENERATE           -> fall through to fresh gpt-5.4
-//
-// Latency: one round-trip to gpt-5.4-mini (~500ms).
-// Cost at study scale: ~$0.001 per question, capped well
-// inside the model's 128K context window.
+// One /api/router call selects CURATED, CACHE, or GENERATE for eligible
+// questions. It receives this catalog, session cache, prior conversation, and
+// the current question; the server supplies the shared Firebase cache.
+// CURATED returns an entry from CHATBOT_FAQ; CACHE returns server-supplied text.
+// GENERATE, an unknown ID, or a failed request falls through to callOpenAI().
+// Model allowlists and routing prompt live in api/router.js. Latency, cost,
+// and semantic matching vary; the route is not a deterministic exact match.
 // =====================================================
 function _formatCuratedForRouter() {
   return CHATBOT_FAQ.map(entry => {
@@ -3300,10 +3376,9 @@ async function unifiedGPTRouter(question, history) {
   }
 }
 
-// Claim the next P00X from the Firebase counter ONLY when the
-// participant has actually completed the study and is about to be
-// stored on Dataverse. Returns true on success, false on failure (we
-// keep the temp- ID and continue; this participant will retry).
+// Request a sequential participant ID at completion, before building final
+// files. A failed request leaves the temporary ID in place. The allocation
+// is separate from upload confirmation, so failed saves can leave counter gaps.
 async function claimSequentialParticipantId() {
   // Already claimed (e.g., this is a retry of a previously-failed upload).
   if (state.participantId && !state.participantId.startsWith('temp-')) return true;
@@ -3339,8 +3414,8 @@ function formatEasternTimestamp(date) {
 }
 
 // DDMMYYYY date stamp (Eastern Time) for filenames, e.g. "22072026"
-// for July 22, 2026. Used in Dataverse / local file names so a researcher
-// can sort by completion date at a glance. Date is derived from a
+// for July 22, 2026. Used in Dataverse / local filenames to identify the date
+// (DDMMYYYY filenames do not sort chronologically as plain text). Derived from a
 // frozen completion timestamp so retries keep the same filename and
 // never produce a duplicate upload under a new name.
 function formatDateDDMMYYYY(input) {
@@ -3360,17 +3435,20 @@ function formatDateDDMMYYYY(input) {
 // =====================================================
 // DATAPIPE → DATAVERSE (participant data storage)
 // =====================================================
-// To activate uploads, replace the entire "REPLACE ME!" string, including the brackets,  
-// with the Datapipe experiment ID (e.g. should look something like hz6pAcxZd4Xd) 
-// for your main JSON data storage (accept new data, validation ON, no required fields).
-// Until then, every completion is saved to localStorage as a safety
-// net — no participant data will be lost.
+// CUSTOMIZE: set the DataPipe experiment ID for the main JSON destination.
+// Configure its validation to accept the fields produced by buildParticipantPayload().
+// REVIEW: the supplied ID is also the rejection sentinel in sendToDataPipe();
+// that helper returns false for this value. Configure and test this deliberately.
+// Beacon paths use the constant directly and do not share that guard.
+// Local backups/retries are best effort: browser storage can fail or be cleared.
 const DATAPIPE_EXPERIMENT_ID = '0e6GR0QQhcLG';
-// Uploads go through our OWN domain (/api/upload proxies to DataPipe/Dataverse
-// server-side) so ad-blockers / privacy browsers / firewalls that block the
-// third-party pipe.jspsych.org can't break participant uploads. Same-origin
-// relative URL so fetch() and sendBeacon() both stay first-party.
+// First-party proxy: api/upload.js forwards JSON to DataPipe/Dataverse.
+// The browser contacts the study origin; this avoids a direct browser request
+// to pipe.jspsych.org but does not guarantee delivery through every network.
 const DATAPIPE_URL = '/api/upload?type=data';
+// COMPATIBILITY: hpl_* keys are retained. For a new study on the same origin,
+// change the full key set (including resetStudy and condition/resume keys) as
+// a coordinated migration so old participants and pending files are not mixed.
 const LOCALSTORAGE_PENDING_KEY = 'hpl_pending_uploads';
 
 // Helpers used by buildParticipantPayload to turn opaque IDs into
@@ -3381,6 +3459,9 @@ function _countWords(s) {
   return t ? t.split(/\s+/).length : 0;
 }
 
+// Export item definitions with responses and option-key presentation order.
+// Image choices export keys/text, not image bytes or paths. Keep a versioned
+// copy of stimulus images and their key-to-image mapping with study materials.
 function _buildLearningSection(subscale, sectionLabelCap, responses, timings) {
   const cfg = LEARNING_ITEMS_RAW[subscale];
   if (!cfg) return { items: [] };
@@ -3417,6 +3498,8 @@ function _buildLearningSection(subscale, sectionLabelCap, responses, timings) {
   };
 }
 
+// Export raw seven-point ratings and reverse-code metadata. This helper does
+// not reverse-score values; analyze them using each item's reverse_coded flag.
 function _buildLikertSection(items, ratings, orderShown) {
   return {
     scale: {
@@ -3447,6 +3530,7 @@ function _buildLikertSection(items, ratings, orderShown) {
   };
 }
 
+// COMPATIBILITY: legacy CRT export helper; not called by the current payload.
 function _buildCrtSection(answers, timings) {
   const scoredMap = (state.responses && state.responses.crt_scored) || {};
   return {
@@ -3472,6 +3556,8 @@ function _buildCrtSection(answers, timings) {
   };
 }
 
+// Export all eight definitions, including a missing/not-applicable distinction
+// for conditional questions and a separate Other-text field.
 function _buildDemographicsSection(answers) {
   return {
     items: DEMO_QUESTIONS.map((q, index) => {
@@ -3518,6 +3604,9 @@ function _buildDemographicsSection(answers) {
   };
 }
 
+// Export fixed presentation order, five-point anchors, raw ratings, and scored
+// item values. The assignment timestamp is recorded by submitAboutYou(); for a
+// resumed or forced condition it may not represent the original allocation time.
 function buildAboutYouPayload() {
   const answers = state.responses.about_you || {};
 
@@ -3570,6 +3659,8 @@ function buildAboutYouPayload() {
   };
 }
 
+// Use the saved pre-test plan to export the actual question/option order.
+// Returns an empty item list if no plan exists (for example, an early test jump).
 function buildPretestPayload() {
   const plan = state.responses.pretest;
 
@@ -3612,6 +3703,9 @@ function buildPretestPayload() {
   };
 }
 
+// Canonical completed-participant JSON. CUSTOMIZE new measures here and in
+// buildParticipantXLSX(); viewers and analysis scripts may depend on these keys.
+// Partial/dropout files use a different shape in sendPartialSnapshotOnDropout().
 function buildParticipantPayload() {
   const now = new Date();
   const started = state.startedAt ? new Date(state.startedAt) : null;
@@ -3639,7 +3733,7 @@ function buildParticipantPayload() {
     // Top-level mirrors of the three keys DataPipe validates against.
     // Duplicated under session below for the labeled view; kept here
     // so the validator (which only checks top-level keys) accepts the
-    // POST. Harmless duplication, ~50 bytes.
+    // POST.
     participantId: state.participantId,
     condition: state.condition,
     completedAt: now.toISOString(),
@@ -3682,6 +3776,8 @@ function buildParticipantPayload() {
       item_order: (state.learningQueue || []).map(item => item.id),
       open_response:          _buildLearningSection('open_response',   'Part 1 of 3 · Explain in your own words', r.open_response   || {}, learningTimings),
       multiple_choice:        _buildLearningSection('multiple_choice', 'Part 2 of 3 · Multiple choice',          r.multiple_choice || {}, learningTimings),
+      // COMPATIBILITY: no consistency items are currently administered; this
+      // retained export section is empty when absent from LEARNING_ITEMS_RAW.
       consistency_monitoring: _buildLearningSection('consistency',     'Part 3 of 3 · One last question',         r.consistency     || {}, learningTimings)
     },
 
@@ -3706,11 +3802,9 @@ function buildParticipantPayload() {
 
     page_timings_ms: state.pageTimings || {},
 
-    // Research-integrity signals captured while the participant was
-    // doing the study. The browser cannot see what other tabs they
-    // opened, but it CAN reliably detect that they left the study
-    // tab, when, and how long they were gone; that they pasted text
-    // into an answer field; and the count of window-focus losses.
+    // Browser visibility/focus and paste events, not evidence of what another
+    // tab contained or why focus changed. Interpret these as contextual signals,
+    // not proof of outside-resource use. Event delivery can vary by browser.
     engagement_signals: {
       tab_hidden_count: r.tab_hidden_count || 0,
       tab_hidden_total_ms: r.tab_hidden_total_ms || 0,
@@ -3747,7 +3841,7 @@ async function fetchWithRetry(url, options, tries = 4) {
 }
 
 async function sendToDataPipe(payload) {
-  if (!DATAPIPE_EXPERIMENT_ID || DATAPIPE_EXPERIMENT_ID === '0e6GR0QQhcLG') { // <-- DON'T replace this "REPLACE ME" string with your Datapipe experiment ID -- this is checking to make sure you actually updated the value from the default template string
+  if (!DATAPIPE_EXPERIMENT_ID || DATAPIPE_EXPERIMENT_ID === '0e6GR0QQhcLG') { // REVIEW: this supplied sentinel also matches the current configured ID.
     console.warn('DataPipe ID not configured — data only saved locally.');
     return false;
   }
@@ -3882,38 +3976,34 @@ async function saveParticipantData() {
 
   if (statusEl) statusEl.textContent = 'Saving your responses…';
 
-  // Step 1: claim the next sequential P00X. Only done now, at the
-  // moment of successful completion — so dropouts never consume an ID.
+  // Step 1: request a sequential ID after the participant finishes the flow.
+  // Allocation happens before upload confirmation; gaps remain possible.
   await claimSequentialParticipantId();
 
-  // Step 2: build the payload with the (now sequential) participantId
-  // and ALWAYS write a localStorage backup before touching the network.
+  // Step 2: build the payload with the assigned ID (or retained temporary ID)
+  // and attempt a localStorage backup before starting the data uploads.
   const payload = buildParticipantPayload();
   saveBackupToLocalStorage(payload);
 
-  // Step 3: fire the side-channel writes right away (consent PDF, XLSX,
-  // email, chatbot CSV). Each is fire-and-forget with its own backup/retry,
-  // and none depends on the raw upload — so they aren't held up by raw-upload
-  // retries.
+  // Step 3: start auxiliary writes independently of the raw JSON upload.
+  // Consent PDF, XLSX, and email-file uploads have local backup/retry queues.
+  // Firebase contact/hash, chatbot CSV, and Q&A writes are separate best-effort
+  // operations; they do not all have those same delivery guarantees.
   captureConsentPDF(payload.completedAt);
   captureParticipantXLSX(payload);
   saveParticipantEmail();
   saveChatbotUserCSVToFirebase();
   saveQARepositoryToFirebase();
 
-  // Step 4: durably upload the response JSON to Dataverse. "Done" is GATED on this
-  // succeeding — the participant is never shown a finished state while their
-  // raw JSON is still unsent. Keeps retrying (capped backoff) while the tab is
-  // open; if they leave first, the localStorage backup + pagehide beacon +
-  // retry-on-reopen remain as fallbacks.
+  // Step 4: update the completion screen's save-status message as JSON uploads
+  // are attempted. Retry with capped backoff, then leave the local backup for
+  // later retries. The completion screen itself is already visible here.
   await uploadRawUntilConfirmed(payload, statusEl);
 }
 
-// Retries the raw-data upload with capped exponential backoff until Dataverse
-// confirms it is stored. Idempotent: sendToDataPipe treats an already-stored
-// (duplicate) file as success, so this can never loop on an already-delivered
-// payload. This is what moves the raw upload from "try a few times, then hope"
-// (at-most-once) toward "keep trying until acknowledged" (at-least-once).
+// Retry raw JSON with capped exponential backoff, up to MAX_ATTEMPTS.
+// A duplicate-file response counts as success in sendToDataPipe(). If all
+// attempts fail, leave the best-effort local backup available for a later load.
 async function uploadRawUntilConfirmed(payload, statusEl) {
   const MAX_ATTEMPTS = 120;        // ~25 min of retrying while the tab stays open
   const MAX_BACKOFF_MS = 15000;
@@ -3942,11 +4032,9 @@ async function uploadRawUntilConfirmed(payload, statusEl) {
 // Snapshots fire on every screen transition; the snapshot is
 // cleared once the study uploads successfully.
 // =====================================================
-// Snapshot schema version bumped after the learning-measure restructure
-// (open-response + multiple-choice + final sections). Any old snapshots
-// saved under the previous key are effectively ignored, which prevents a
-// participant from resuming into a stale learning queue built from the
-// previous item set.
+// CUSTOMIZE: use a new snapshot key when changing response schemas or saved
+// queues. Do not change it mid-collection without a migration plan. Old keys
+// are not read by this loader; resetStudy() clears the active snapshot key.
 const SESSION_SNAPSHOT_KEY = 'adolescent_session_snapshot_v4_pretest';
 const SESSION_SNAPSHOT_MAX_AGE_HOURS = 72;
 
@@ -4049,13 +4137,13 @@ function discardSnapshotAndStartFresh() {
 }
 
 // =====================================================
-// CONSENT PDF — generate at consent submission, upload to Dataverse
+// CONSENT PDF — generated at study completion, then uploaded separately
 // =====================================================
-// To complete setup, replace the entire "REPLACE ME!" string, including the brackets,   
-// with the Datapipe experiment ID for your consent storage  
-// (accept new data, accept Base64 files, validation OFF).
-// Until then, every completion is saved to localStorage as a safety
-// net — no participant data will be lost.
+// CUSTOMIZE: set a separate DataPipe destination that accepts base64 files.
+// REVIEW: sendConsentPDFToDataPipe() rejects the currently supplied ID as its
+// sentinel. Review the configuration and guard together before deployment.
+// The PDF includes contact/condition information and the current consent DOM.
+// It is an auxiliary record; consent decision time is also saved in the JSON.
 const DATAPIPE_CONSENT_EXPERIMENT_ID = 'snmC8hxbvNMJ';
 // First-party proxy (see DATAPIPE_URL above); base64 payloads route to the
 // DataPipe /api/base64/ endpoint via ?type=base64.
@@ -4078,7 +4166,7 @@ function generateConsentPDF(participantId, condition, consentValue, email) {
   // Title
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('Consent Record — HPL AI Study', margin, y);
+  doc.text('Consent Record — Adolescent Study', margin, y);
   y += 26;
 
   // Header info block
@@ -4104,8 +4192,8 @@ function generateConsentPDF(participantId, condition, consentValue, email) {
   doc.line(margin, y, pageWidth - margin, y);
   y += 18;
 
-  // Consent form body (pulled from the DOM so it always matches what
-  // the participant actually saw on screen)
+  // Read the current consent DOM at PDF generation time. Keep study versions
+  // stable during collection; this is not a historical snapshot of the DOM.
   const consentDoc = document.querySelector('.consent-doc');
   const consentText = consentDoc ? consentDoc.innerText : '[Consent form text could not be retrieved]';
 
@@ -4142,7 +4230,7 @@ function generateConsentPDF(participantId, condition, consentValue, email) {
 }
 
 async function sendConsentPDFToDataPipe(filename, base64Data) {
-  if (!DATAPIPE_CONSENT_EXPERIMENT_ID || DATAPIPE_CONSENT_EXPERIMENT_ID === 'snmC8hxbvNMJ') { // <-- DON'T replace this "REPLACE ME" string
+  if (!DATAPIPE_CONSENT_EXPERIMENT_ID || DATAPIPE_CONSENT_EXPERIMENT_ID === 'snmC8hxbvNMJ') { // REVIEW: this supplied sentinel also matches the current configured ID.
     console.warn('Consent DataPipe ID not configured — consent PDF saved locally only.');
     return false;
   }
@@ -4212,26 +4300,22 @@ async function captureConsentPDF(completedAt) {
 }
 
 // =====================================================
-// PER-PARTICIPANT XLSX (one workbook with 4 sheets)
+// PER-PARTICIPANT XLSX
 // -----------------------------------------------------
-// Mirrors the JSON payload but in a researcher-readable
-// shape: Chatbot (turn-by-turn), Learning (row per Q),
-// CRT (row per Q), Other (everything else flattened).
-// Uploaded to Dataverse via DataPipe base64 endpoint, with the
-// same localStorage backup + retry pattern as the consent
-// PDF so transient network failures recover on next load.
-//     
-// To complete setup, replace the entire "REPLACE ME!" string, including the brackets,  
-// with the Datapipe experiment ID for your XLSX storage  
-// (accept new data, accept Base64 files, validation OFF).
-// Until then, every completion is saved to localStorage as a safety
-// net — no participant data will be lost.
+// A readable companion to the JSON: chat, pre/post-test responses and order,
+// consent, manipulation check, experience/instructor ratings, demographics,
+// and About you raw ratings plus item-level scoring metadata.
+// Most item sheets are transposed; transcript/order sheets and About You
+// Responses use row-oriented layouts. See each sheet's builder below.
+// CUSTOMIZE: set a DataPipe destination that accepts base64 XLSX files.
+// REVIEW: sendXLSXToDataPipe() rejects the current supplied ID as its sentinel.
+// Uploads have a best-effort local backup and retry queue.
 // =====================================================
 const DATAPIPE_XLSX_EXPERIMENT_ID = 'MGAhDFWE859A';
 const LOCALSTORAGE_PENDING_XLSX_KEY = 'hpl_pending_xlsx_files';
 
 // Transposes an array-of-arrays (rows of cells) into the column-major
-// shape every sheet in this workbook uses: attribute labels run down
+// shape used by the item-oriented sheets: attribute labels run down
 // the first column and each subsequent column is one question, one
 // chatbot turn, etc. Lets us keep the natural row-per-record builder
 // code below and flip orientation in a single place.
@@ -4253,11 +4337,11 @@ function buildParticipantXLSX(payload) {
   }
   const wb = XLSX.utils.book_new();
 
-  // Each sheet keeps ONLY what the participant said or chose.
-  // Scoring, correct answers, timings, anchor labels, reverse-code
-  // flags, etc. are all in the JSON file if researchers need them.
+  // Response sheets retain raw answers. About You Item Details additionally
+  // includes reverse-code flags and scored ratings. JSON carries the fuller
+  // session metadata; worksheet contents are intentionally explicit below.
 
-  // ---- Sheet 1a: Chatbot Questions (one header row of question
+  // ---- Sheet: Chatbot Questions (one header row of question
   //      numbers, one data row of the participant's questions only;
   //      assistant answers are excluded from this sheet.)
   const msgs = (payload.chatbot_conversation && payload.chatbot_conversation.messages) || [];
@@ -4270,7 +4354,7 @@ function buildParticipantXLSX(payload) {
     : [''];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([chatHeader, chatRow]), 'Chatbot Questions');
 
-  // ---- Sheet 1b: Chatbot Conversation (full interleaved transcript,
+  // ---- Sheet: Chatbot Conversation (full interleaved transcript,
   //      one row per turn: participant questions AND chatbot replies.)
   const convoRows = [['Turn', 'Role', 'Message', 'Timestamp (Eastern)']];
   msgs.forEach((m, i) => {
@@ -4286,47 +4370,47 @@ function buildParticipantXLSX(payload) {
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(convoRows), 'Chatbot Conversation');
 
-  // ---- Pre-test (row per question) ----
+  // ---- Sheet: Pre-test (row per question) ----
   const preRows = [[
-  'item_id',
-  'position_shown',
-  'prompt',
-  'selected_key',
-  'selected_text',
-  'option_order'
-]];
+    'item_id',
+    'position_shown',
+    'prompt',
+    'selected_key',
+    'selected_text',
+    'option_order'
+  ]];
 
-(payload.pre_test?.items || []).forEach(item => {
-  preRows.push([
-    item.id,
-    item.position_shown,
-    item.prompt,
-    item.participant_selected_key || '',
-    item.participant_selected_text || '',
-    (item.presented_order || []).join(', ')
-  ]);
-});
+  (payload.pre_test?.items || []).forEach(item => {
+    preRows.push([
+      item.id,
+      item.position_shown,
+      item.prompt,
+      item.participant_selected_key || '',
+      item.participant_selected_text || '',
+      (item.presented_order || []).join(', ')
+    ]);
+  });
 
-XLSX.utils.book_append_sheet(
-  wb,
-  XLSX.utils.aoa_to_sheet(preRows),
-  'Pre-test'
-);
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(preRows),
+    'Pre-test'
+  );
 
-// ---- Post-test presentation order (row per question) ----
-const postOrderRows = [['position_shown', 'item_id']];
+  // ---- Sheet: Post-test presentation order (row per question) ----
+  const postOrderRows = [['position_shown', 'item_id']];
 
-(payload.learning_measure?.item_order || []).forEach((id, index) => {
-  postOrderRows.push([index + 1, id]);
-});
+  (payload.learning_measure?.item_order || []).forEach((id, index) => {
+    postOrderRows.push([index + 1, id]);
+  });
 
-XLSX.utils.book_append_sheet(
-  wb,
-  XLSX.utils.aoa_to_sheet(postOrderRows),
-  'Post-test Order'
-);
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.aoa_to_sheet(postOrderRows),
+    'Post-test Order'
+  );
 
-  // ---- Sheet 2: Learning measure (column per question) ----
+  // ---- Sheet: Learning measure (column per question) ----
   const learnRows = [['item_id', 'prompt', 'response', 'word_count']];
   const lm = payload.learning_measure || {};
   ['open_response', 'multiple_choice', 'consistency_monitoring'].forEach(key => {
@@ -4343,39 +4427,39 @@ XLSX.utils.book_append_sheet(
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(learnRows)), 'Learning');
 
-  // ---- Sheet 4: Consent ----
+  // ---- Sheet: Consent ----
   const consent = payload.consent || {};
   const consentRows = [['attribute', 'value']];
   consentRows.push(['decision', consent.decision || '']);
   consentRows.push(['decision_text', consent.decision_text || '']);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(consentRows), 'Consent');
 
-  // ---- Sheet 5: Manipulation Check ----
+  // ---- Sheet: Manipulation Check ----
   const manip = payload.manipulation_check || {};
   const manipRows = [['attribute', 'value']];
   manipRows.push(['prompt', manip.prompt || '']);
   manipRows.push(['selected_options', (manip.selected_options || []).join('; ')]);
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(manipRows), 'Manipulation Check');
 
-  // ---- Sheet 6: Lesson Experience (column per Likert item) ----
+  // ---- Sheet: Lesson Experience (column per Likert item) ----
   const lL = (payload.appraisal && payload.appraisal.lesson_experience_likert && payload.appraisal.lesson_experience_likert.items) || [];
   const lLRows = [['item_id', 'statement', 'participant_rating']];
   lL.forEach(it => lLRows.push([it.id, it.statement, it.participant_rating != null ? it.participant_rating : '']));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(lLRows)), 'Lesson Experience');
 
-  // ---- Sheet 7: Chatbot Experience (column per Likert item) ----
+  // ---- Sheet: Chatbot Experience (column per Likert item) ----
   const cL = (payload.appraisal && payload.appraisal.chatbot_experience_likert && payload.appraisal.chatbot_experience_likert.items) || [];
   const cLRows = [['item_id', 'statement', 'participant_rating']];
   cL.forEach(it => cLRows.push([it.id, it.statement, it.participant_rating != null ? it.participant_rating : '']));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(cLRows)), 'Chatbot Experience');
 
-  // ---- Sheet 8: SI Perceptions (column per Likert item) ----
+  // ---- Sheet: SI Perceptions (column per Likert item) ----
   const siL = (payload.si_perceptions && payload.si_perceptions.items) || [];
   const siRows = [['item_id', 'statement', 'participant_rating']];
   siL.forEach(it => siRows.push([it.id, it.statement, it.participant_rating != null ? it.participant_rating : '']));
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(transposeAoA(siRows)), 'SI Perceptions');
 
-  // ---- Sheet 9: Demographics (column per question) ----
+  // ---- Sheet: Demographics (column per question) ----
   const demo = payload.demographics?.items || [];
 
   const demoRows = [[
@@ -4465,7 +4549,7 @@ XLSX.utils.book_append_sheet(
 }
 
 async function sendXLSXToDataPipe(filename, base64) {
-  if (!DATAPIPE_XLSX_EXPERIMENT_ID || DATAPIPE_XLSX_EXPERIMENT_ID === 'MGAhDFWE859A') { // <-- DON'T replace this "REPLACE ME" string
+  if (!DATAPIPE_XLSX_EXPERIMENT_ID || DATAPIPE_XLSX_EXPERIMENT_ID === 'MGAhDFWE859A') { // REVIEW: this supplied sentinel also matches the current configured ID.
     console.warn('XLSX DataPipe ID not configured — XLSX file saved locally only.');
     return false;
   }
@@ -4527,7 +4611,7 @@ async function captureParticipantXLSX(payload) {
 }
 
 // =====================================================
-// SEMANTIC CACHE (embedding-based, meaning not word overlap)
+// EMBEDDING HELPERS (used to select fresh-answer reference examples)
 // =====================================================
 async function getEmbedding(text) {
   const res = await proxyFetch('/embed', { model: 'text-embedding-3-small', input: text });
@@ -4554,6 +4638,9 @@ let sessionAnswerCache = [];
 let firebaseCacheMirror = null;
 let firebaseCacheLoading = null;
 
+// COMPATIBILITY: despite its name, this does not download shared Firebase
+// data. It initializes a local array used by persistAnswer(); api/router.js
+// reads the cross-participant cache server-side.
 async function loadFirebaseCacheMirror() {
   if (firebaseCacheMirror !== null) return firebaseCacheMirror;
   if (firebaseCacheLoading) return firebaseCacheLoading;
@@ -4565,10 +4652,9 @@ async function loadFirebaseCacheMirror() {
 }
 
 async function persistAnswer(question, embedding, answer) {
-  // 1. SYNCHRONOUS in-memory push: the next question in this session
-  //    (and any concurrent request) can find this answer immediately,
-  //    no Firebase latency dependency. This is what makes same-session
-  //    reuse work flawlessly even when the participant types fast.
+  // 1. Add the answer to this page's in-memory cache immediately, so a later
+  //    router call can consider it without waiting for the Firebase write.
+  //    This cache is not included in snapshotSession().
   const entry = { question, embedding, answer, savedAt: new Date().toISOString() };
   sessionAnswerCache.push(entry);
   if (firebaseCacheMirror !== null) firebaseCacheMirror.push(entry);
@@ -4582,10 +4668,14 @@ async function persistAnswer(question, embedding, answer) {
 // OPENAI CHATBOT  (calls go through same-origin Vercel proxy at /api/*)
 // The OpenAI key lives ONLY in the serverless env. Never in this file.
 // =====================================================
+// CUSTOMIZE models in this file together with api/chat.js, api/router.js, and
+// api/embed.js allowlists. Keep the hplSystem flag: it is an existing backend
+// contract, not a display label. Secrets belong in the server environment.
 const API_BASE = '/api';
 
 // Lazy, idempotent token bootstrap. First proxy call mints a session
-// token; every subsequent call reuses it until refresh.
+// token; subsequent calls reuse the in-memory token until the page reloads.
+// This helper does not implement an expired-token refresh flow.
 let __studyTokenPromise = null;
 async function getStudyToken() {
   if (__studyTokenPromise) return __studyTokenPromise;
@@ -4791,6 +4881,9 @@ function toggleLandingHelp(e) {
 // =====================================================
 // NAVIGATION
 // =====================================================
+// Show one screen, update progress/timing, and run screen-specific renderers.
+// pageTimings stores the latest visit for each screen, not a visit history.
+// CUSTOMIZE new screens in HTML, SCREENS, this function, and their route buttons.
 function goTo(screenId) {
   if (state.currentScreen && state.pageTimings[state.currentScreen]) {
     state.pageTimings[state.currentScreen].exitedAt = Date.now();
@@ -4800,8 +4893,8 @@ function goTo(screenId) {
   if (!target) { console.warn('No screen:', screenId); return; }
   target.classList.add('active');
   // Move focus to the new screen's heading so screen-reader users hear the
-  // screen change. Screen-specific input autofocus (textarea, CRT field,
-  // chat input) runs after this and takes precedence where it applies.
+  // screen change. Screen-specific input focus runs afterward and takes
+  // precedence where it applies.
   const screenHeading = target.querySelector('h1, h2');
   if (screenHeading) {
     screenHeading.setAttribute('tabindex', '-1');
@@ -4850,8 +4943,9 @@ function goTo(screenId) {
 }
 
 function updateProgress() {
-  // Compute progress against the visible flow (excludes landing + complete,
-  // which don't show the bar). Smooth 0–100% sweep, bar-only — no text.
+  // Estimate progress from the SCREENS inventory. It includes conditional
+  // screens, so this is not an exact proportion of tasks in each condition.
+  // The progress bar is hidden on landing and complete screens by goTo().
   const visibleScreens = SCREENS.slice(1, -1);
   const visibleIdx = visibleScreens.indexOf(state.currentScreen);
   if (visibleIdx === -1) return;
@@ -4862,119 +4956,125 @@ function updateProgress() {
 // =====================================================
 // LEARNING MEASURE: one-at-a-time presentation
 // =====================================================
+// CUSTOMIZE: post-test bank; the pre-test references MC items here by ID.
+// Keep stable item IDs, unique option keys, and text labels for exports. Optional
+// image/alt fields render image choices; commit the referenced files separately.
+// The bank's array order is not presentation order: see buildLearningQueue().
+// maxWords applies to written answers; update the learning-intro count if the
+// total changes. Image alt placeholders below still need actual descriptions.
 const LEARNING_ITEMS_RAW = {
   open_response: {
-  sectionLabel: 'Learning measure · Written response',
-  maxWords: 60, 
-  items: [
-    { id: 'q05_velocity', prompt: 'Define velocity.' },
-    { id: 'q08_impetus', prompt: 'According to the impetus view, what happens to the source of motion inside an object over time?' },
-    { id: 'q10_newtonian', prompt: 'Why does the Newtonian explanation say that no force is needed to keep an object moving at constant velocity?' },
-    { id: 'q11_friction', prompt: 'Why does reducing friction make it easier to distinguish between the impetus and Newtonian explanations?' },
-    { id: 'q12_convincing', prompt: 'Why can the impetus idea feel convincing to people even when it is not the correct scientific explanation?' },
-    { id: 'q13_cart', prompt: 'Imagine you push an empty shopping cart hard across a flat parking lot and let go, and it gradually slows down and stops. The next day, you push the same cart with the same force across a smooth floor indoors, and it travels much farther before stopping. Which explanation, impetus or Newtonian, better fits observations, and why?' },
-    { id: 'q14_passenger', prompt: 'A passenger is sitting in a car that suddenly brakes hard. Their body lurches forward even though nothing pushes them. Use Newton\'s First Law to explain why this happens.' },
-    { id: 'q15_magician', prompt: 'A magician yanks a tablecloth out from under a set of dishes, and the dishes barely move. Use Newton\'s First Law to explain why the dishes stay roughly in place.' }
-  ]
-},
-multiple_choice: {
-  sectionLabel: 'Learning measure · Multiple choice',
-  maxWords: 60,
-  items: [
-    {
-      id: 'q01_train_ball', type: 'mc',
-      prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the train, a fixed mechanical claw holds a ball halfway along the ceiling between the front and rear of the car. The ball is released. Ignore air resistance; there is no wind inside the car. Where will the ball fall?',
-      options: [
-        { key: 'A', text: 'Behind the halfway point of the car floor' },
-        { key: 'B', text: 'Exactly on the halfway point of the car floor' }
-      ]
-    },
-    {
-      id: 'q02_hovercraft_east', type: 'mc',
-      prompt: 'A hovercraft is moving from east toward west at a constant velocity of 70 MPH in a straight line. The water surface is perfectly smooth, the hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a painting hung on the north wall, 20 ft above the floor level. At one point, the nail gets loose and the painting falls freely without touching the wall. Please ignore air resistance. There is no wind inside the cabin. The painting will fall:',
-      options: [
-        { key: 'A', text: 'Directly below the place it was hung' },
-        { key: 'B', text: 'Away from the place it was hung, in a direction opposite from the hovercraft\'s motion' }
-      ]
-    },
-    {
-      id: 'q03_cannonball', type: 'mc',
-      prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the cabin, there is a compressed spring on the floor of the car, located half way along the front and the rear ends of the cabin. There is a cannonball resting on top of the spring. At one point, the spring is released, and the cannonball is shot upward in a perfect straight trajectory. The cannonball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The cannonball will fall:',
-      options: [
-        { key: 'A', text: 'Behind the halfway point of the car floor' },
-        { key: 'B', text: 'Exactly on the halfway point of the car floor, on top of the spring' }
-      ]
-    },
-    {
-      id: 'q04_hovercraft_straight', type: 'mc',
-      prompt: 'A hovercraft is moving at a constant velocity of 70 MPH in a straight line. The hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a compressed spring on the floor of the craft, located half way along the front and the rear ends of the cabin. There is a ball resting on top of the spring. At one point, the spring is released, and the ball is shot upward in a perfect straight trajectory. The ball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The ball\'s downward trajectory will be:',
-      options: [
-        { key: 'A', text: 'Perfectly straight' },
-        { key: 'B', text: 'Slightly curved' }
-      ]
-    },
-    {
-      id: 'q06_first_law', type: 'mc',
-      prompt: 'What does Newton\'s First Law state',
-      options: [
-        { key: 'A', text: 'The acceleration of an object is equal to the net force acting on it divided by its mass' },
-        { key: 'B', text: 'An object stays at rest or keeps moving at constant velocity unless a net force acts on it' },
-        { key: 'C', text: 'When one object exerts a force on another, the second object exerts an equal and opposite force back'},
-        { key: 'D', text: 'The total momentum of a system stays constant when no outside force acts on the system' }
-      ]
-    },
-    {
-      id: 'q07_net_force', type: 'mc',
-      prompt: 'What is meant by net force?',
-      options: [
-        { key: 'A', text: ' The single strongest force pushing or pulling on the object' },
-        { key: 'B', text: 'The force the object needs in order to keep moving at constant velocity.' },
-        { key: 'C', text: 'The combined effect of all the forces acting on the object'},
-        { key: 'D', text: 'The force produced by the object itself as it moves'}
-      ]
-    },
-    {
-      id: 'q09_book', type: 'mc',
-      prompt: 'According to the Newtonian explanation, why does a book pushed across a table slow down and come to rest?',
-      options: [
-        { key: 'A', text: ' The push the book received gradually wears off, and once it is gone the book has nothing left to keep it moving' },
-        { key: 'B', text: 'Gravity pulls the book downward and this downward pull slowly stops its horizontal motion' },
-        { key: 'C', text: 'The book returns to its natural state of rest, which is the state all objects tend toward'},
-        { key: 'D', text: 'Friction between the book and the table acts against the motion, producing a net force that reduces the book\'s velocity'}
-      ]
-    },
-    {
-      id: 'q16_image', type: 'mc',
-      prompt: 'Imagine that the Sun suddenly disappeared, so that no gravitational force from the Sun acted on Earth. At that moment, Earth is moving along its orbit. Which path would Earth follow next?',
-      options: [
-        {
-          key: 'A',
-          text: 'Diagram A',
-          image: 'images/q16-a.png',
-          alt: 'Description of diagram A'
-        },
-        {
-          key: 'B',
-          text: 'Diagram B',
-          image: 'images/q16-b.png',
-          alt: 'Description of diagram B'
-        },
-        {
-          key: 'C',
-          text: 'Diagram C',
-          image: 'images/q16-c.png',
-          alt: 'Description of diagram C'
-        },
-        {
-          key: 'D',
-          text: 'Diagram D',
-          image: 'images/q16-d.png',
-          alt: 'Description of diagram D'
-        }
-      ]
-    }
-  ]
-}
+    sectionLabel: 'Learning measure · Written response',
+    maxWords: 60, 
+    items: [
+      { id: 'q05_velocity', prompt: 'Define velocity.' },
+      { id: 'q08_impetus', prompt: 'According to the impetus view, what happens to the source of motion inside an object over time?' },
+      { id: 'q10_newtonian', prompt: 'Why does the Newtonian explanation say that no force is needed to keep an object moving at constant velocity?' },
+      { id: 'q11_friction', prompt: 'Why does reducing friction make it easier to distinguish between the impetus and Newtonian explanations?' },
+      { id: 'q12_convincing', prompt: 'Why can the impetus idea feel convincing to people even when it is not the correct scientific explanation?' },
+      { id: 'q13_cart', prompt: 'Imagine you push an empty shopping cart hard across a flat parking lot and let go, and it gradually slows down and stops. The next day, you push the same cart with the same force across a smooth floor indoors, and it travels much farther before stopping. Which explanation, impetus or Newtonian, better fits observations, and why?' },
+      { id: 'q14_passenger', prompt: 'A passenger is sitting in a car that suddenly brakes hard. Their body lurches forward even though nothing pushes them. Use Newton\'s First Law to explain why this happens.' },
+      { id: 'q15_magician', prompt: 'A magician yanks a tablecloth out from under a set of dishes, and the dishes barely move. Use Newton\'s First Law to explain why the dishes stay roughly in place.' }
+    ]
+  },
+  multiple_choice: {
+    sectionLabel: 'Learning measure · Multiple choice',
+    maxWords: 60,
+    items: [
+      {
+        id: 'q01_train_ball', type: 'mc',
+        prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the train, a fixed mechanical claw holds a ball halfway along the ceiling between the front and rear of the car. The ball is released. Ignore air resistance; there is no wind inside the car. Where will the ball fall?',
+        options: [
+          { key: 'A', text: 'Behind the halfway point of the car floor' },
+          { key: 'B', text: 'Exactly on the halfway point of the car floor' }
+        ]
+      },
+      {
+        id: 'q02_hovercraft_east', type: 'mc',
+        prompt: 'A hovercraft is moving from east toward west at a constant velocity of 70 MPH in a straight line. The water surface is perfectly smooth, the hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a painting hung on the north wall, 20 ft above the floor level. At one point, the nail gets loose and the painting falls freely without touching the wall. Please ignore air resistance. There is no wind inside the cabin. The painting will fall:',
+        options: [
+          { key: 'A', text: 'Directly below the place it was hung' },
+          { key: 'B', text: 'Away from the place it was hung, in a direction opposite from the hovercraft\'s motion' }
+        ]
+      },
+      {
+        id: 'q03_cannonball', type: 'mc',
+        prompt: 'A train is moving at a constant velocity of 100 MPH in a straight line. Inside the cabin, there is a compressed spring on the floor of the car, located half way along the front and the rear ends of the cabin. There is a cannonball resting on top of the spring. At one point, the spring is released, and the cannonball is shot upward in a perfect straight trajectory. The cannonball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The cannonball will fall:',
+        options: [
+          { key: 'A', text: 'Behind the halfway point of the car floor' },
+          { key: 'B', text: 'Exactly on the halfway point of the car floor, on top of the spring' }
+        ]
+      },
+      {
+        id: 'q04_hovercraft_straight', type: 'mc',
+        prompt: 'A hovercraft is moving at a constant velocity of 70 MPH in a straight line. The hovercraft maintains level flight at all times, and there are NO vibrations. Inside the cabin, there is a compressed spring on the floor of the craft, located half way along the front and the rear ends of the cabin. There is a ball resting on top of the spring. At one point, the spring is released, and the ball is shot upward in a perfect straight trajectory. The ball travels upward 6 ft and then it starts falling downward. Please ignore air resistance. There is no wind inside the car. The ball\'s downward trajectory will be:',
+        options: [
+          { key: 'A', text: 'Perfectly straight' },
+          { key: 'B', text: 'Slightly curved' }
+        ]
+      },
+      {
+        id: 'q06_first_law', type: 'mc',
+        prompt: 'What does Newton\'s First Law state',
+        options: [
+          { key: 'A', text: 'The acceleration of an object is equal to the net force acting on it divided by its mass' },
+          { key: 'B', text: 'An object stays at rest or keeps moving at constant velocity unless a net force acts on it' },
+          { key: 'C', text: 'When one object exerts a force on another, the second object exerts an equal and opposite force back'},
+          { key: 'D', text: 'The total momentum of a system stays constant when no outside force acts on the system' }
+        ]
+      },
+      {
+        id: 'q07_net_force', type: 'mc',
+        prompt: 'What is meant by net force?',
+        options: [
+          { key: 'A', text: ' The single strongest force pushing or pulling on the object' },
+          { key: 'B', text: 'The force the object needs in order to keep moving at constant velocity.' },
+          { key: 'C', text: 'The combined effect of all the forces acting on the object'},
+          { key: 'D', text: 'The force produced by the object itself as it moves'}
+        ]
+      },
+      {
+        id: 'q09_book', type: 'mc',
+        prompt: 'According to the Newtonian explanation, why does a book pushed across a table slow down and come to rest?',
+        options: [
+          { key: 'A', text: ' The push the book received gradually wears off, and once it is gone the book has nothing left to keep it moving' },
+          { key: 'B', text: 'Gravity pulls the book downward and this downward pull slowly stops its horizontal motion' },
+          { key: 'C', text: 'The book returns to its natural state of rest, which is the state all objects tend toward'},
+          { key: 'D', text: 'Friction between the book and the table acts against the motion, producing a net force that reduces the book\'s velocity'}
+        ]
+      },
+      {
+        id: 'q16_image', type: 'mc',
+        prompt: 'Imagine that the Sun suddenly disappeared, so that no gravitational force from the Sun acted on Earth. At that moment, Earth is moving along its orbit. Which path would Earth follow next?',
+        options: [
+          {
+            key: 'A',
+            text: 'Diagram A',
+            image: 'images/q16-a.png',
+            alt: 'Description of diagram A'
+          },
+          {
+            key: 'B',
+            text: 'Diagram B',
+            image: 'images/q16-b.png',
+            alt: 'Description of diagram B'
+          },
+          {
+            key: 'C',
+            text: 'Diagram C',
+            image: 'images/q16-c.png',
+            alt: 'Description of diagram C'
+          },
+          {
+            key: 'D',
+            text: 'Diagram D',
+            image: 'images/q16-d.png',
+            alt: 'Description of diagram D'
+          }
+        ]
+      }
+    ]
+  }
 };
 
 function countWords(str) {
@@ -5002,8 +5102,8 @@ function shuffleOptions(options) {
 }
 
 // Shuffle that prevents two reverse-coded items from landing back-to-back.
-// Uses rejection sampling — for typical Likert blocks (2 reverse items in
-// 4–10 total) this terminates in 1–3 attempts ~99% of the time.
+// Try up to 50 shuffles, then fall back to an unconstrained shuffle. Thus
+// separation is preferred, not guaranteed for every item set.
 function shuffleAvoidingReverseAdjacent(items) {
   for (let attempt = 0; attempt < 50; attempt++) {
     const shuffled = shuffle(items);
@@ -5019,7 +5119,9 @@ function shuffleAvoidingReverseAdjacent(items) {
   return shuffle(items); // extremely unlikely fallback
 }
 
-// The four questions repeated before and after the lesson.
+// CUSTOMIZE: IDs of MC items repeated before and after the lesson. Every ID
+// must exist in LEARNING_ITEMS_RAW.multiple_choice.items. Keep this list aligned
+// with pre/post instructions; the plan randomizes questions and options once.
 const PRETEST_ITEM_IDS = [
   'q01_train_ball',
   'q02_hovercraft_east',
@@ -5216,6 +5318,9 @@ function pretestPrev() {
   }
 }
 
+// Repeated items come first in the saved pre-test order, with the same option
+// order. Shuffle the remaining post-test items together. No consistency item
+// is appended, and numeric order fields are not used.
 function buildLearningQueue() {
   const plan = ensurePretestPlan();
   const pool = [];
@@ -5272,6 +5377,8 @@ function startLearningItems() {
   goTo('learning-items');
 }
 
+// Render one saved-queue item. Image choices keep their key/text for exports;
+// changing the stimulus bank does not rebuild an already-saved learningQueue.
 function renderLearningItem() {
   const q = state.learningQueue;
   if (!q) return;
@@ -5632,30 +5739,26 @@ async function readEmailHashDirectly(hash) {
 }
 
 // =====================================================
-// PARTICIPANT EMAIL — PRIVACY-FIRST STORAGE
+// PARTICIPANT EMAIL AND DUPLICATE CHECKS
 // =====================================================
-// Full participant emails live ONLY in the Dataverse collection
-// as a per-participant JSON file named P00X_email_DDMMYYYY.json. 
-// Firebase only ever sees an opaque SHA-256 hash of the email,
-// used solely to detect "this email has already completed the study" 
-// at consent-submit time.
-//
-// Threat model: even if someone discovers the Firebase URL and
-// fully downloads /email_hashes, all they get is irreversible
-// hashes. The full email list lives only on the private Dataverse
-// collection, which requires a Dataverse login to access.
-//
-// To complete setup, replace the entire "REPLACE ME!" string, including the brackets,  
-// with the Datapipe experiment ID for your email storage  
-// (accept new data, accept Base64 files, validation OFF).
-// Until then, every completion is saved to localStorage as a safety
-// net — no participant data will be lost.
+// Contact information is stored in several places by the current code:
+// - state and local session snapshots include the participant's email;
+// - recordContactEmailEarly() sends plaintext email, hash, and condition to
+//   /api/firebase for a contact record at consent and after assignment;
+// - saveParticipantEmail() uploads a separate email/condition JSON file whose
+//   filename contains the normalized email, then writes a hash-to-ID index;
+// - the completion-generated consent PDF also includes the email.
+// Hashing the lookup key does not make these linked records anonymous.
+// CUSTOMIZE collection, access, retention, and participant-facing wording
+// together. The browser code alone does not establish storage access controls.
+// Set a separate DataPipe destination accepting base64 files below.
+// REVIEW: sendEmailFileToDataverse() rejects the supplied ID as its sentinel.
 // =====================================================
 const DATAPIPE_EMAIL_EXPERIMENT_ID = 'y4826nckIFUN';
 const LOCALSTORAGE_PENDING_EMAIL_KEY = 'hpl_pending_email_files';
 
-// SHA-256 of a normalized email, hex-encoded. Used to compare
-// emails without ever sending or storing the plaintext on Firebase.
+// SHA-256 lookup key for normalized emails. Plaintext contact capture is a
+// separate operation; this helper is not an anonymization guarantee.
 async function sha256(text) {
   const enc = new TextEncoder().encode(text);
   const buf = await crypto.subtle.digest('SHA-256', enc);
@@ -5667,7 +5770,7 @@ function normalizeEmail(email) {
 }
 
 async function sendEmailFileToDataverse(filename, base64Data) {
-  if (!DATAPIPE_EMAIL_EXPERIMENT_ID || DATAPIPE_EMAIL_EXPERIMENT_ID === 'y4826nckIFUN') { // <-- DON'T replace this "REPLACE ME" string
+  if (!DATAPIPE_EMAIL_EXPERIMENT_ID || DATAPIPE_EMAIL_EXPERIMENT_ID === 'y4826nckIFUN') { // REVIEW: this supplied sentinel also matches the current configured ID.
     console.warn('Email DataPipe ID not configured — email file saved locally only.');
     return false;
   }
@@ -5722,8 +5825,9 @@ async function saveParticipantEmail() {
   const now = new Date();
   const dateStr = formatDateDDMMYYYY(now);
 
-  // 1. Full email -> Dataverse (private component). JSON wrapper carries
-  //    just enough metadata to cross-reference with the response file.
+  // 1. Full email and condition -> the configured DataPipe destination.
+  //    Its access policy is configured outside this file. The filename below
+  //    contains the normalized email; account for that in data handling.
   try {
     const payload = {
       email: state.participantEmail,
@@ -5740,9 +5844,8 @@ async function saveParticipantEmail() {
     console.warn('Email-to-Dataverse failed:', err);
   }
 
-  // 2. Hash -> Firebase (opaque). Keyed by hash so lookups for the
-  //    dedup check are O(1) and the node can't be enumerated to
-  //    recover an email list.
+  // 2. Write a hash-to-participant-ID entry for direct duplicate lookup.
+  //    The hash is a pseudonymous lookup key, not proof of anonymity.
   try {
     const hash = await sha256(normalized);
     await firebaseAction({
@@ -5854,12 +5957,10 @@ function updateDebriefConfirm() {
   document.getElementById('debrief-confirm-label').classList.toggle('selected', cb.checked);
 }
 
-// Firebase-backed ABC ABC ABC rotation. The counter increments on each
-// real assignment (not on dropouts at landing/email/consent screens, since
-// those screens are before consent submission). The %3 rotation guarantees
-// baseline -> private -> visible -> baseline -> ... across all participants
-// globally, not per-browser, so opening the study in a fresh browser does
-// not reset the rotation. localStorage is the offline fallback.
+// Firebase-backed baseline -> private -> visible rotation, requested after
+// the About you table. Keep these keys aligned with api/firebase.js and FRAMING.
+// This is counter-based allocation, not random assignment. A saved condition
+// is reused; if the counter request fails, randomFallbackCondition() is used.
 const CONDITION_ROTATION = ['baseline', 'private', 'visible'];
 let conditionAssignmentPromise = null;
 
@@ -5939,6 +6040,9 @@ function ensureConditionAssignment() {
   return conditionAssignmentPromise;
 }
 
+// COMPATIBILITY: historical name retained for the consent button handler.
+// This function records consent and advances to instructions; it does NOT
+// assign a condition. Assignment is requested by submitAboutYou().
 function assignConditionAndContinue() {
   const choice = document.querySelector('input[name="consent-choice"]:checked');
   const consentValue = choice ? choice.value : null;
@@ -5962,11 +6066,9 @@ function assignConditionAndContinue() {
     consent_pdf_filename: `${state.participantId}_consent_${formatDateDDMMYYYY(consentTs)}.pdf`
   };
 
-  // NOTE: the consent PDF, email→Firebase write, and chatbot user
-  // CSV write are all deferred to saveParticipantData() at the
-  // 'complete' screen. That way they all use the same sequential
-  // P00X (claimed at completion), and dropouts never consume an ID
-  // or pollute the email/PDF/CSV nodes with abandoned sessions.
+  // Consent PDF, final email file/hash, and chatbot exports are requested at
+  // completion. Early plaintext contact capture below is separate and can
+  // exist even when a participant never completes the study.
 
   // Preserve early contact capture without assigning a condition yet.
   recordContactEmailEarly();
@@ -5974,11 +6076,9 @@ function assignConditionAndContinue() {
   goTo('instructions');
 }
 
-// Store the participant's email as soon as they consent — BEFORE the study
-// runs — so we can still reach them (and know their condition) even if their
-// final upload fails. Goes through /api/firebase (first-party, so ad-blockers
-// don't block it) into the `contact_emails` node. Fire-and-forget; researcher/
-// test runs are skipped so they don't pollute the contact list.
+// Best-effort plaintext contact capture through /api/firebase. Called once at
+// consent (normally with condition:null) and again after assignment to update
+// the condition. Researcher-mode calls return without writing a contact record.
 async function recordContactEmailEarly() {
   if (researcherModeEnabled()) return;
   try {
@@ -6029,8 +6129,8 @@ function renderFramingPending() {
 }
 
 function renderFraming() {
-  // If no condition is set yet, wait for the background assignment that
-  // began on the consent screen instead of falling back prematurely.
+  // Assignment normally finishes after About you. Keep this fallback for
+  // resumed sessions and researcher navigation directly to framing.
   if (!state.condition || !FRAMING[state.condition]) {
     renderFramingPending();
     ensureConditionAssignment()
@@ -6070,6 +6170,9 @@ function renderFraming() {
   return true;
 }
 
+// CUSTOMIZE condition branches here and in afterExpLessonRoute(). Baseline
+// skips the chatbot; private/visible also receive chatbot experience and the
+// manipulation check later. All conditions receive instructor perceptions.
 function afterLessonRoute() {
   if (state.condition === 'baseline') goTo('learning-intro');
   else goTo('chatbot');
@@ -6083,16 +6186,12 @@ function afterExpLessonRoute() {
 // =====================================================
 // TIME GATES (generic, used by framing + lesson)
 // =====================================================
+// CUSTOMIZE minimum reading times in seconds. Keep initial HTML timer labels
+// aligned with these values. Use the researcher panel's Skip gates for testing.
 const GATE_CONFIG = {
   framing: { seconds: 30, passed: false, interval: null },
   lesson:  { seconds: 90, passed: false, interval: null }
 };
-
-// for testing:
-// const GATE_CONFIG = {
-//   framing: { seconds: 0, passed: false, interval: null },
-//   lesson:  { seconds: 0, passed: false, interval: null }
-// };
 
 function startGate(name) {
   const cfg = GATE_CONFIG[name];
@@ -6254,6 +6353,11 @@ function renderVisibilityBanner() {
   }
 }
 
+// Preserve conversation before routing. Follow-up/meta questions bypass reuse;
+// other messages try the router, then fresh generation. Successful generated
+// answers are cached only when an embedding exists and the question is eligible.
+// The closing sentence is currently controlled by FAQ text/server prompt, not
+// enforced by this function; redirects and errors may have different wording.
 async function sendChatMessage() {
   const input = document.getElementById('chat-input');
   const sendBtn = document.getElementById('chat-send-btn');
@@ -6279,8 +6383,8 @@ async function sendChatMessage() {
 
   const skipCache = isFollowUp(text) || isMetaQuestion(text);
 
-  // Embed the question once. The same embedding feeds the curated-repo
-  // router, the cross-participant semantic cache, and the scope anchor.
+  // Embed once for reference-example ranking and optional cache persistence.
+  // The router request itself uses text/catalog/history, not this vector.
   let questionEmbedding = null;
   try { questionEmbedding = await getEmbedding(text); } catch { /* fall through */ }
 
@@ -6290,7 +6394,7 @@ async function sendChatMessage() {
     try { await precomputeCuratedRepoEmbeddings(); } catch { /* non-blocking */ }
   }
 
-  // 1. UNIFIED GPT ROUTER — one GPT call sees the 55-entry curated
+  // 1. UNIFIED GPT ROUTER — one GPT call sees the curated
   //    repository and the current Firebase / session cache, decides
   //    CURATED / CACHE / GENERATE. No cosine. No threshold. Returns
   //    the canonical text verbatim when there is a match.
@@ -6309,7 +6413,7 @@ async function sendChatMessage() {
     }
   }
 
-  // 3. FRESH ANSWER — call gpt-5.4 with a scope anchor built from the
+  // 2. FRESH ANSWER — call gpt-5.4 with a scope anchor built from the
   //    nearest curated answers. The anchor pins length, depth, and tone
   //    to the realm of the curated answers without overriding the
   //    participant's actual question. Save to semantic cache for future
@@ -6594,7 +6698,7 @@ function submitManipulationCheck() {
 }
 
 // =====================================================
-// CRT (one at a time)
+// LEGACY CRT PRESENTATION (not connected to the current flow)
 // =====================================================
 state.crtQueue = null;
 state.crtIndex = 0;
@@ -6685,6 +6789,9 @@ function crtPrev() {
 // =====================================================
 // DEMOGRAPHICS
 // =====================================================
+// Demographics are optional and saved on input/change. Keep conditional IDs
+// synchronized with DEMO_QUESTIONS and _buildDemographicsSection(). Changing
+// SCI_TAKEN away from Yes removes the no-longer-applicable checklist responses.
 function demoQuestionIsVisible(question, answers) {
   return question.id !== 'SCI_WHICH' || answers.SCI_TAKEN === 'Yes';
 }
@@ -6836,6 +6943,9 @@ function submitDemographics() {
 // =====================================================
 // ABOUT YOU: FIVE-POINT TABLE
 // =====================================================
+// Render the fixed-order, five-point table; restore selected values on resume.
+// Input changes save immediately. submitAboutYou() requires every item before
+// recording completion and requesting condition assignment.
 function renderAboutYou() {
   state.responses.about_you = state.responses.about_you || {};
 
@@ -6961,6 +7071,10 @@ async function submitAboutYou() {
 // =====================================================
 // DEBRIEF
 // =====================================================
+// CUSTOMIZE: additional explanation for visible-condition participants plus
+// the confirmation sentence for all conditions. Keep it consistent with the
+// static study-debrief HTML and actual data handling. Inherited privacy claims
+// and HPL wording are retained for explicit study-content review.
 function renderVisibleDebrief() {
   const slot = document.getElementById('visible-debrief-extra');
   const confirmText = document.getElementById('confirm-text');
@@ -6969,7 +7083,7 @@ function renderVisibleDebrief() {
     slot.innerHTML = `
       <div style="margin-top:24px; padding:32px 36px; background:#fff5f5; border:2px solid #fc8181; border-radius:14px;">
         <h2 style="margin:0 0 20px; font-size:clamp(20px,2.2vw,26px); color:#c53030; letter-spacing:-.02em; font-weight:700;">An Important Note About Your Condition</h2>
-        <p style="color:#742a2a; font-size:17px; line-height:1.75; margin-bottom:16px;">In your condition, you were told that your chatbot interactions would be shared with your assigned Science Instructor. <strong style="color:#c53030;">This is NOT true. Your interactions were not and will not be shared with your SI, nor anyone on the HPL teaching team, nor anyone outside the research team.</strong> No identifiable information was collected at any point during the study.</p>
+        <p style="color:#742a2a; font-size:17px; line-height:1.75; margin-bottom:16px;">In your condition, you were told that your chatbot interactions would be shared with your assigned Science Instructor. <strong style="color:#c53030;">This is NOT true. Your interactions were not and will not be shared with your SI, nor anyone outside the research team.</strong> No identifiable information was collected at any point during the study.</p>
         <p style="color:#742a2a; font-size:17px; line-height:1.75; margin-bottom:16px;">We told you this in order to understand whether students interact with the chatbot differently when they believe an instructor can see their interactions. This is a key question of our study and could not be answered without creating this belief.</p>
         <p style="color:#742a2a; font-size:17px; line-height:1.75; margin:0;">This type of mild deception is a standard practice in behavioral research. Our research protocols are reviewed and approved by the Harvard Institutional Review Board.</p>
       </div>`;
@@ -6996,12 +7110,11 @@ function toggleTestPanel() {
   document.getElementById('panel-toggle').textContent = panel.classList.contains('collapsed') ? '▲' : '▼';
 }
 
-// Researcher-only gate for the test-panel actions. Without it a participant
-// could open the console and call skipGates()/dumpData()/applyForcedCondition()
-// to tamper with their own session. Enabled when the URL carries
-// ?researcher-access (researchers use a bookmarked URL). The older
-// ?researcher=hpl-staff form still works so existing bookmarks don't break.
-// This is obscurity, not hard security, but it stops casual console tampering.
+// Researcher convenience mode, enabled by ?researcher-access. The older
+// ?researcher=hpl-staff alias remains for bookmark compatibility. A query string
+// is not authentication. This mode skips the completion-upload branch and some
+// writes, but chatbot/API/cache activity and pending-upload retries may still
+// occur. Test against separate storage; do not treat this as full isolation.
 function researcherModeEnabled() {
   try {
     const p = new URLSearchParams(location.search);
@@ -7045,8 +7158,9 @@ function applyForcedCondition(value) {
 function resetStudy() {
   if (!researcherModeEnabled()) return;
   if (!confirm('Reset the study? All in-progress data and sticky test-panel state will be cleared.')) return;
-  // True fresh start for testing: clear every localStorage key the
-  // study writes so the next load behaves like a brand-new participant.
+  // Clear the listed local study keys and the active session snapshot.
+  // Pending local upload queues are removed too. This does not delete server
+  // records or reset Firebase counters.
   try {
     ['hpl_condition',
      'hpl_participant_count',
@@ -7061,8 +7175,7 @@ function resetStudy() {
   location.reload();
 }
 
-// Researchers reveal the hidden test panel by loading the study with
-// ?researcher=hpl-staff (the same flag that unlocks the panel actions).
+// Reveal the researcher panel with ?researcher-access (legacy alias accepted).
 if (researcherModeEnabled()) {
   const __tp = document.getElementById('test-panel');
   if (__tp) __tp.style.display = 'block';
@@ -7105,19 +7218,16 @@ if (getCompletionFlag() && !researcherModeEnabled()) {
 // =====================================================
 // PAGEHIDE SAFETY NET — sendBeacon backup on tab close
 // -----------------------------------------------------
-// Closes the small window between "participant reached complete
-// screen" and "Dataverse upload finished". sendBeacon is a browser API
-// specifically designed for this: a fire-and-forget POST the
-// browser is permitted to complete even after the page is gone.
-// If anything is sitting in the localStorage pending queues at the
-// moment the page is hidden / unloaded, we beacon it off to its
-// DataPipe endpoint. The page-load retry remains the safety net
-// for the next visit; this just catches the "never returns" case.
+// Best-effort attempt to send pending files when the page is hidden/unloaded.
+// sendBeacon has no server acknowledgement here; queuing is not proof of
+// storage. Pending files remain for page-load retries. Browser queue limits
+// can reject large JSON/PDF/XLSX payloads. These paths use destination IDs
+// directly, without the normal upload-helper configuration guards.
 // =====================================================
 function sendPendingViaBeacon() {
   if (!navigator.sendBeacon) return;
 
-  // JSON payloads (small, well under sendBeacon's 64KB limit).
+  // Pending JSON payloads; large transcripts may exceed the beacon queue budget.
   try {
     const pending = readPendingUploads();
     for (const pid in pending) {
@@ -7162,14 +7272,12 @@ function sendPendingViaBeacon() {
 // =====================================================
 // ATTENTION + PASTE TRACKING
 // -----------------------------------------------------
-// Detects whether the participant left the study tab during
-// the session and whether they pasted text into any input.
-// Useful research-integrity signal for mid-study lookups,
-// external AI use, etc. The browser cannot see what other
-// tab they opened, but it CAN detect that they left, when,
-// for how long, and that they pasted content into a field
-// (we keep a short preview of what they pasted, since the
-// full text also ends up in the answer field anyway).
+// Record visibility/focus changes and paste attempts with a short text preview.
+// These are contextual signals, not proof of outside-resource or AI use. The
+// browser cannot identify another tab's contents. Paste tracking also records
+// attempts later blocked by the paste restriction, so a preview may exist even
+// when the answer field did not receive that text. Review collection/retention
+// alongside the study's participant-facing data-handling description.
 // =====================================================
 let __lastTabHiddenAt = null;
 
@@ -7295,8 +7403,8 @@ document.addEventListener('paste', (e) => {
   } catch {}
 }, true);
 
-// Block copy / cut of study content everywhere so it can't be lifted out
-// of the study (e.g. pasted into an external AI). Copying stays allowed
+// Discourage copy/cut of study content through browser event handlers; this
+// does not prevent screenshots or other extraction methods. Copying stays allowed
 // from the participant's own answer fields and from a few reference
 // regions: the lesson shown beside the chatbot, the lesson debrief and its
 // citations, and contact-email links. Researcher mode is exempt.
@@ -7318,8 +7426,8 @@ function copyEventAllowed(e) {
   });
 });
 
-// Block paste into the answer fields (learning-measure + CRT) so external
-// answers can't be pasted in. The capture-phase paste tracker above still
+// Block ordinary paste events on the listed answer screens. This is an input
+// restriction, not proof that responses are unaided. The paste tracker above still
 // logs any attempt first. Paste stays allowed elsewhere (e.g. pasting a
 // copied lesson reference into the chatbot input). Researcher mode exempt.
 const NO_PASTE_SCREENS = ['learning-items', 'crt-items'];
